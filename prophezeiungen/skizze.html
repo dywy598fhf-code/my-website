@@ -13,6 +13,7 @@
   --ot: #8a5a1f;        /* Altes Testament: earth / ochre */
   --nt: #1f4f7a;        /* Neues Testament: deep blue */
   --line: #cfd4cc;
+  --mark: #b3261e;      /* red: the words that fulfil the prophecy */
   --display: "Young Serif", Georgia, serif;
   --body: "Source Serif 4", Georgia, serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -21,12 +22,12 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #12161c; --surface: #1a2028; --ink: #e6e8e4; --muted: #9aa3ab;
-    --ot: #d9a35b; --nt: #7fb2e0; --line: #2c343e; color-scheme: dark;
+    --ot: #d9a35b; --nt: #7fb2e0; --line: #2c343e; --mark: #ff7a6e; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #12161c; --surface: #1a2028; --ink: #e6e8e4; --muted: #9aa3ab;
-  --ot: #d9a35b; --nt: #7fb2e0; --line: #2c343e; color-scheme: dark;
+  --ot: #d9a35b; --nt: #7fb2e0; --line: #2c343e; --mark: #ff7a6e; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -82,6 +83,7 @@ h1 { font: 400 clamp(2rem, 5vw, 3.2rem)/1.1 var(--display); margin: 0; text-wrap
 .ref { font: 600 1.05rem/1.3 var(--body); margin: 0; }
 .card p { margin: 0; }
 .verse { color: var(--ink); }
+.verse mark { background: none; color: var(--mark); font-weight: 600; }
 .verse sup { font: 500 0.65rem var(--mono); color: var(--muted); margin-right: 3px; }
 .card .ref + .verse + .ref { margin-top: 6px; }
 
@@ -114,6 +116,7 @@ h1 { font: 400 clamp(2rem, 5vw, 3.2rem)/1.1 var(--display); margin: 0; text-wrap
     <div class="legend">
       <span><i style="background:var(--ot)"></i>Altes Testament · Prophezeiung</span>
       <span><i style="background:var(--nt)"></i>Neues Testament · Erfüllung</span>
+      <span><i style="background:var(--mark)"></i>Rot · erfüllte Stelle</span>
     </div>
   </header>
 
@@ -126,28 +129,28 @@ h1 { font: 400 clamp(2rem, 5vw, 3.2rem)/1.1 var(--display); margin: 0; text-wrap
       <article class="card ot">
         <span class="tag">Prophezeiung</span>
         <p class="ref">Micha 5:1</p>
-        <p class="verse">Und du, Bethlehem-Ephrata, du bist zwar gering unter den Hauptorten von Juda; aber aus dir soll mir hervorkommen, der Herrscher über Israel werden soll, dessen Hervorgehen von Anfang, von den Tagen der Ewigkeit her gewesen ist.</p>
+        <p class="verse">Und du, Bethlehem-Ephrata, du bist zwar gering unter den Hauptorten von Juda; aber aus dir soll mir hervorkommen, der Herrscher über Israel werden soll, dessen <mark>Hervorgehen von Anfang, von den Tagen der Ewigkeit her gewesen ist.</mark></p>
       </article>
       <span class="node" aria-hidden="true"></span>
       <article class="card nt">
         <span class="tag">Erfüllung</span>
         <p class="ref">Johannes 1:1, 14</p>
-        <p class="verse"><sup>1</sup>Im Anfang war das Wort, und das Wort war bei Gott, und das Wort war Gott. <sup>14</sup>Und das Wort wurde Fleisch und wohnte unter uns; und wir sahen seine Herrlichkeit, eine Herrlichkeit als des Eingeborenen vom Vater, voller Gnade und Wahrheit.</p>
+        <p class="verse"><sup>1</sup><mark>Im Anfang war das Wort, und das Wort war bei Gott, und das Wort war Gott.</mark> <sup>14</sup><mark>Und das Wort wurde Fleisch und wohnte unter uns;</mark> und wir sahen seine Herrlichkeit, eine Herrlichkeit als des Eingeborenen vom Vater, voller Gnade und Wahrheit.</p>
       </article>
     </section>
 
     <section class="stop">
-      <div class="stage"><small>Kreuzigung</small><h2>Hände und Füsse durchbohrt</h2></div>
+      <div class="stage"><small>Kreuzigung</small><h2>Hände und Füße durchbohrt</h2></div>
       <article class="card ot">
         <span class="tag">Prophezeiung</span>
         <p class="ref">Psalm 22:17</p>
-        <p class="verse">Denn Hunde umringen mich, eine Rotte von Übeltätern umgibt mich; sie haben meine Hände und meine Füsse durchgraben.</p>
+        <p class="verse">Denn Hunde umringen mich, eine Rotte von Übeltätern umgibt mich; <mark>sie haben meine Hände und meine Füße durchgraben.</mark></p>
       </article>
       <span class="node" aria-hidden="true"></span>
       <article class="card nt">
         <span class="tag">Erfüllung</span>
         <p class="ref">Johannes 20:25</p>
-        <p class="verse">Da sagten ihm die anderen Jünger: Wir haben den Herrn gesehen! Er aber sprach zu ihnen: Wenn ich nicht an seinen Händen das Nägelmal sehe und meinen Finger in das Nägelmal lege und meine Hand in seine Seite lege, so werde ich es niemals glauben!</p>
+        <p class="verse">Da sagten ihm die anderen Jünger: Wir haben den Herrn gesehen! <mark>Er aber sprach zu ihnen: Wenn ich nicht an seinen Händen das Nägelmal sehe und meinen Finger in das Nägelmal lege und meine Hand in seine Seite lege, so werde ich es niemals glauben!</mark></p>
       </article>
     </section>
 
@@ -156,20 +159,20 @@ h1 { font: 400 clamp(2rem, 5vw, 3.2rem)/1.1 var(--display); margin: 0; text-wrap
       <article class="card ot">
         <span class="tag">Prophezeiung</span>
         <p class="ref">Psalm 68:19</p>
-        <p class="verse">Du bist zur Höhe emporgestiegen, hast Gefangene weggeführt; du hast Gaben empfangen unter den Menschen, auch den Widerspenstigen, damit Gott, der HERR, eine Wohnung habe.</p>
+        <p class="verse"><mark>Du bist zur Höhe emporgestiegen,</mark> hast Gefangene weggeführt; du hast Gaben empfangen unter den Menschen, auch den Widerspenstigen, damit Gott, der HERR, eine Wohnung habe.</p>
       </article>
       <span class="node" aria-hidden="true"></span>
       <article class="card nt">
         <span class="tag">Erfüllung</span>
         <p class="ref">Lukas 24:51</p>
-        <p class="verse">Und es geschah, indem er sie segnete, schied er von ihnen und wurde aufgehoben in den Himmel.</p>
+        <p class="verse"><mark>Und es geschah, indem er sie segnete, schied er von ihnen und wurde aufgehoben in den Himmel.</mark></p>
         <p class="ref">Apostelgeschichte 1:9</p>
-        <p class="verse">Und als er dies gesagt hatte, wurde er vor ihren Augen emporgehoben, und eine Wolke nahm ihn auf von ihren Augen weg.</p>
+        <p class="verse"><mark>Und als er dies gesagt hatte, wurde er vor ihren Augen emporgehoben, und eine Wolke nahm ihn auf von ihren Augen weg.</mark></p>
       </article>
     </section>
   </main>
 
-  <p class="end">Skizze mit 3 von über 50 Zeilen</p>
+  <p class="end">Skizze mit 3 von über 50 Zeilen · Schlachter 2000</p>
 </div>
 
 <script>
