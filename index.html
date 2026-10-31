@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kevin Nold</title>
+  <meta name="description" content="Kevin Nold's personal website, in three styles to choose from.">
+
+  <!-- Fonts from Google Fonts. Each style uses different ones. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       SHARED BASICS (used by every style)
+       ========================================================= */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      transition: background-color 0ms; /* style swap is instant on purpose */
+    }
+    body[data-theme="calm"] { background: #faf9f7; }
+    body[data-theme="glow"] { background: #07070b; }
+    body[data-theme="bold"] { background: #f1ebe0; }
+
+    img { max-width: 100%; display: block; }
+    a { color: inherit; }
+
+    :root {
+      /* Easing curves from Emil Kowalski's design guide */
+      --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    }
+
+    /* Gentle "fade up" when the page appears. --i staggers each item. */
+    .reveal {
+      animation: rise 640ms var(--ease-out) both;
+      animation-delay: calc(var(--i, 0) * 70ms);
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { animation: none; }
+    }
+
+    /* =========================================================
+       STYLE 1: CALM (minimal, quiet, lots of white space)
+       ========================================================= */
+    .calm {
+      --ink: #1d1c1a;
+      --muted: #77736c;
+      --line: #e7e4de;
+      --accent: #3d6b5a;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+      font-size: 16px;
+      line-height: 1.65;
+      padding: 96px 20px 140px;
+    }
+    .calm-wrap { max-width: 580px; margin: 0 auto; }
+    .calm-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: #ecebe6; color: var(--accent);
+      font-family: "Newsreader", Georgia, serif; font-size: 22px;
+      margin-bottom: 36px;
+    }
+    .calm h1 {
+      font-family: "Newsreader", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(34px, 6vw, 44px);
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      margin: 0 0 20px;
+    }
+    .calm h1 em { color: var(--muted); }
+    .calm-lead { color: var(--muted); font-size: 17px; margin: 0 0 64px; max-width: 30em; }
+    .calm h2 {
+      font-size: 13px; font-weight: 500; letter-spacing: 0.04em;
+      text-transform: uppercase; color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .calm-list { list-style: none; margin: 0 0 64px; padding: 0; border-top: 1px solid var(--line); }
+    .calm-list a {
+      display: grid; grid-template-columns: 1fr auto; gap: 4px 24px;
+      padding: 20px 0; border-bottom: 1px solid var(--line);
+      text-decoration: none;
+    }
+    .calm-list strong { font-weight: 500; }
+    .calm-list span { grid-column: 1; color: var(--muted); font-size: 15px; }
+    .calm-list small {
+      grid-row: 1; grid-column: 2; color: var(--muted); font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+    .calm-list .arrow {
+      display: inline-block; margin-left: 6px; color: var(--accent); opacity: 0;
+      transform: translateX(-4px);
+      transition: opacity 200ms var(--ease-out), transform 200ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .calm-list a:hover .arrow { opacity: 1; transform: translateX(0); }
+    }
+    .calm-links { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 0; padding: 0; list-style: none; }
+    .calm-links a {
+      color: var(--ink); text-decoration: underline;
+      text-decoration-color: var(--line); text-underline-offset: 4px; text-decoration-thickness: 1px;
+      transition: text-decoration-color 160ms ease;
+    }
+    .calm-links a:hover { text-decoration-color: var(--accent); }
+    .calm-foot { margin-top: 96px; color: var(--muted); font-size: 13px; }
+
+    /* =========================================================
+       STYLE 2: GLOW (dark, soft light, glassy cards)
+       ========================================================= */
+    .glow {
+      --text: #ececf1;
+      --dim: #8d8d9c;
+      --edge: rgba(255, 255, 255, 0.08);
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+      color: var(--text);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      padding: 112px 20px 150px;
+      isolation: isolate;
+    }
+    /* The coloured blurry lights behind everything */
+    .glow-orb {
+      position: absolute; z-index: -1; border-radius: 50%;
+      filter: blur(90px); opacity: 0.55; pointer-events: none;
+    }
+    .glow-orb.a { width: 520px; height: 520px; top: -180px; left: 50%; margin-left: -460px; background: #6d4aff; }
+    .glow-orb.b { width: 420px; height: 420px; top: -60px;  left: 50%; margin-left: 40px;   background: #00c2b8; opacity: 0.35; }
+    .glow-orb.c { width: 600px; height: 300px; bottom: -200px; left: 50%; margin-left: -300px; background: #ff4fa3; opacity: 0.18; }
+    .glow-grid-bg {
+      position: absolute; inset: 0; z-index: -1; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+      background-size: 56px 56px;
+      -webkit-mask-image: radial-gradient(ellipse 70% 55% at 50% 20%, #000 30%, transparent 75%);
+              mask-image: radial-gradient(ellipse 70% 55% at 50% 20%, #000 30%, transparent 75%);
+    }
+    .glow-wrap { max-width: 920px; margin: 0 auto; text-align: center; }
+    .glow-pill {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px 6px 10px; border-radius: 999px;
+      border: 1px solid var(--edge); background: rgba(255,255,255,0.04);
+      color: var(--dim); font-size: 13px; margin-bottom: 28px;
+    }
+    .glow-dot { width: 7px; height: 7px; border-radius: 50%; background: #3df5b0; box-shadow: 0 0 10px #3df5b0; }
+    .glow h1 {
+      margin: 0 0 20px;
+      font-size: clamp(44px, 9vw, 84px);
+      font-weight: 600; line-height: 1.02; letter-spacing: -0.045em;
+      background: linear-gradient(180deg, #fff 30%, rgba(255,255,255,0.55));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .glow-lead { max-width: 34em; margin: 0 auto 40px; color: var(--dim); font-size: 18px; }
+    .glow-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 96px; }
+    .glow-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 44px; padding: 0 20px; border-radius: 999px;
+      font: inherit; font-size: 15px; font-weight: 500; text-decoration: none;
+      transition: transform 160ms var(--ease-out), background-color 160ms ease, box-shadow 160ms ease;
+    }
+    .glow-btn:active { transform: scale(0.97); }
+    .glow-btn.primary { background: #fff; color: #0a0a10; box-shadow: 0 0 0 1px #fff, 0 8px 30px rgba(140, 110, 255, 0.35); }
+    .glow-btn.ghost { color: var(--text); background: rgba(255,255,255,0.05); box-shadow: inset 0 0 0 1px var(--edge); }
+    @media (hover: hover) and (pointer: fine) {
+      .glow-btn.ghost:hover { background: rgba(255,255,255,0.09); }
+    }
+    .glow-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: left; }
+    .glow-card {
+      position: relative; overflow: hidden;
+      padding: 24px; border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+      box-shadow: inset 0 0 0 1px var(--edge);
+      text-decoration: none;
+      transition: transform 200ms var(--ease-out), box-shadow 200ms ease;
+    }
+    /* A soft light that follows your mouse inside each card */
+    .glow-card::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(260px circle at var(--mx, 50%) var(--my, -40%), rgba(150, 120, 255, 0.18), transparent 70%);
+      opacity: 0; transition: opacity 200ms ease;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .glow-card:hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.16); }
+      .glow-card:hover::before { opacity: 1; }
+    }
+    .glow-card:active { transform: scale(0.985); }
+    .glow-icon {
+      width: 36px; height: 36px; border-radius: 10px; margin-bottom: 18px;
+      display: grid; place-items: center; font-size: 17px;
+      background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px var(--edge);
+    }
+    .glow-card h3 { margin: 0 0 6px; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+    .glow-card p { margin: 0; color: var(--dim); font-size: 14.5px; line-height: 1.55; }
+    .glow-tag { display: inline-block; margin-top: 18px; font-size: 12px; color: #b6a6ff; }
+    .glow-foot { margin-top: 88px; color: #5c5c6a; font-size: 13px; }
+    @media (max-width: 760px) {
+      .glow-cards { grid-template-columns: 1fr; }
+      .glow { padding-top: 88px; }
+      .glow-cta { margin-bottom: 64px; }
+    }
+
+    /* =========================================================
+       STYLE 3: BOLD (editorial, big type, like a magazine)
+       ========================================================= */
+    .bold {
+      --paper: #f1ebe0;
+      --ink: #141210;
+      --red: #e0401b;
+      --soft: #6b645a;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 16px; line-height: 1.55;
+      padding: 0 clamp(16px, 4vw, 48px) 150px;
+    }
+    .bold-mast {
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      padding: 18px 0; border-bottom: 2px solid var(--ink);
+      font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .bold-mast nav { display: flex; gap: 20px; }
+    .bold-mast a { text-decoration: none; }
+    .bold-mast a:hover { color: var(--red); }
+    .bold-name {
+      font-family: "Anton", Impact, sans-serif;
+      font-weight: 400; text-transform: uppercase;
+      font-size: clamp(76px, 21vw, 300px);
+      line-height: 0.86; letter-spacing: -0.01em;
+      margin: 28px 0 0;
+    }
+    .bold-name span { color: var(--red); }
+    .bold-hero { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; }
+    .bold-aside {
+      margin: 0 0 8px; max-width: 16em; text-align: right;
+      font-family: "Fraunces", Georgia, serif; font-size: 20px; line-height: 1.3;
+    }
+    .bold-aside span { display: inline-block; margin-top: 12px; font-family: "Inter", sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--red); }
+    .bold-intro {
+      display: grid; grid-template-columns: 1fr 2fr; gap: 32px;
+      border-top: 2px solid var(--ink); margin-top: 28px; padding-top: 24px;
+    }
+    .bold-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .bold-intro p {
+      margin: 0;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(24px, 3.4vw, 40px); line-height: 1.18; letter-spacing: -0.01em;
+    }
+    .bold-intro em { color: var(--red); }
+    .bold-section-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin: 88px 0 0; padding-bottom: 12px; border-bottom: 2px solid var(--ink);
+    }
+    .bold-section-head h2 { margin: 0; font-family: "Anton", Impact, sans-serif; font-weight: 400; font-size: 32px; text-transform: uppercase; letter-spacing: 0.01em; }
+    .bold-cards { display: grid; grid-template-columns: repeat(3, 1fr); }
+    .bold-card {
+      display: block; text-decoration: none;
+      padding: 22px 24px 30px 0;
+      border-bottom: 1px solid var(--ink);
+    }
+    .bold-card + .bold-card { padding-left: 24px; border-left: 1px solid var(--ink); }
+    .bold-num { font-family: "Anton", Impact, sans-serif; font-size: 56px; line-height: 1; color: var(--red); }
+    .bold-card h3 {
+      margin: 18px 0 8px; font-family: "Fraunces", Georgia, serif; font-weight: 600;
+      font-size: 24px; line-height: 1.15; letter-spacing: -0.01em;
+    }
+    .bold-card h3 span {
+      background: linear-gradient(var(--red), var(--red)) 0 100% / 0 2px no-repeat;
+      transition: background-size 250ms var(--ease-out);
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .bold-card:hover h3 span { background-size: 100% 2px; }
+    }
+    .bold-card p { margin: 0; color: var(--soft); font-size: 15px; }
+    .bold-card small { display: block; margin-top: 16px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .bold-cta {
+      display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap;
+      margin-top: 88px; padding: 32px; background: var(--ink); color: var(--paper);
+    }
+    .bold-cta p { margin: 0; font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: clamp(26px, 4vw, 44px); line-height: 1.1; }
+    .bold-btn {
+      display: inline-flex; align-items: center; height: 48px; padding: 0 22px;
+      background: var(--red); color: #fff; text-decoration: none;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      transition: transform 160ms var(--ease-out);
+    }
+    .bold-btn:active { transform: scale(0.97); }
+    .bold-foot { display: flex; justify-content: space-between; margin-top: 24px; font-size: 12px; color: var(--soft); letter-spacing: 0.04em; text-transform: uppercase; }
+    @media (max-width: 760px) {
+      .bold-intro { grid-template-columns: 1fr; gap: 12px; }
+      .bold-cards { grid-template-columns: 1fr; }
+      .bold-card, .bold-card + .bold-card { padding: 22px 0 28px; border-left: 0; }
+      .bold-mast nav { display: none; }
+      .bold-aside { display: none; }
+      .bold-name { font-size: 43vw; }
+    }
+
+    /* =========================================================
+       THE STYLE SWITCHER (the dark pill at the bottom).
+       From Emil Kowalski's "prototype" skill. Not part of the design.
+       ========================================================= */
+    .proto-picker {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      padding: 4px;
+      border-radius: 999px;
+      background: rgba(10, 10, 10, 0.82);
+      -webkit-backdrop-filter: blur(12px) saturate(1.4);
+      backdrop-filter: blur(12px) saturate(1.4);
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 8px 24px rgba(0, 0, 0, 0.24),
+        0 2px 6px rgba(0, 0, 0, 0.12);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 13px;
+      line-height: 1;
+      -webkit-font-smoothing: antialiased;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .proto-picker-highlight {
+      position: absolute;
+      top: 4px;
+      left: 0;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      will-change: transform;
+    }
+    .proto-picker[data-ready] .proto-picker-highlight {
+      transition:
+        transform 250ms cubic-bezier(0.23, 1, 0.32, 1),
+        width 250ms cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .proto-picker[data-ready] .proto-picker-highlight { transition: none; }
+    }
+    .proto-picker-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 28px;
+      padding: 0 12px;
+      border: 0;
+      border-radius: 999px;
+      background: transparent;
+      color: rgba(255, 255, 255, 0.55);
+      font: inherit;
+      cursor: pointer;
+      transition: color 150ms ease-out;
+    }
+    .proto-picker-item:hover { color: rgba(255, 255, 255, 0.85); }
+    .proto-picker-item:active { transform: scale(0.97); }
+    .proto-picker-item:focus-visible { outline: 2px solid rgba(255, 255, 255, 0.4); outline-offset: 2px; }
+    .proto-picker-item[data-active] { color: #fff; }
+    .proto-picker-divider {
+      width: 1px;
+      height: 16px;
+      margin: 0 4px;
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .proto-picker-replay { padding: 0 10px; font-size: 14px; }
+  </style>
+</head>
+<body data-theme="calm">
+
+  <!-- The chosen style gets drawn in here -->
+  <main id="stage"></main>
+
+  <!-- The style switcher -->
+  <nav class="proto-picker" aria-label="Prototype variants">
+    <span class="proto-picker-highlight" aria-hidden="true"></span>
+    <button class="proto-picker-item" data-active aria-current="true">Calm</button>
+    <button class="proto-picker-item">Glow</button>
+    <button class="proto-picker-item">Bold</button>
+    <span class="proto-picker-divider" aria-hidden="true"></span>
+    <button class="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)">↻</button>
+  </nav>
+
+  <script>
+    /* =========================================================
+       YOUR CONTENT. Change the words here and every style updates.
+       ========================================================= */
+    const me = {
+      first: "Kevin",
+      last: "Nold",
+      intro: "I'm learning to design websites, one page at a time.",
+      about: "I'm new to code and figuring out what I like by making things. This site is where I practise, and where my experiments will live.",
+      projects: [
+        { icon: "✦", title: "This website", text: "My very first site. Built to learn HTML, CSS and a little JavaScript.", tag: "2026", href: "#" },
+        { icon: "◇", title: "Things I find beautiful", text: "A growing collection of websites, posters and apps that make me stop and look.", tag: "Collection", href: "#" },
+        { icon: "→", title: "Next project", text: "A placeholder for the next thing I design, once I know what it is.", tag: "Coming soon", href: "#" },
+      ],
+      links: [
+        { label: "GitHub", href: "https://github.com/dywy598fhf-code" },
+        { label: "Email", href: "mailto:hello@example.com" }, // ← put your real email here
+      ],
+    };
+
+    const year = new Date().getFullYear();
+
+    /* =========================================================
+       THE THREE STYLES. Each one draws the same content differently.
+       ========================================================= */
+    const variants = [
+
+      // 1. CALM
+      () => `
+        <div class="calm"><div class="calm-wrap">
+          <div class="calm-avatar reveal" style="--i:0" aria-hidden="true">${me.first[0]}</div>
+          <h1 class="reveal" style="--i:1">${me.first} ${me.last}<br><em>${me.intro}</em></h1>
+          <p class="calm-lead reveal" style="--i:2">${me.about}</p>
+
+          <h2 class="reveal" style="--i:3">Projects</h2>
+          <ul class="calm-list reveal" style="--i:4">
+            ${me.projects.map(p => `
+              <li><a href="${p.href}">
+                <strong>${p.title}<span class="arrow" aria-hidden="true">→</span></strong>
+                <small>${p.tag}</small>
+                <span>${p.text}</span>
+              </a></li>`).join("")}
+          </ul>
+
+          <h2 class="reveal" style="--i:5">Elsewhere</h2>
+          <ul class="calm-links reveal" style="--i:6">
+            ${me.links.map(l => `<li><a href="${l.href}">${l.label}</a></li>`).join("")}
+          </ul>
+
+          <p class="calm-foot reveal" style="--i:7">© ${year} ${me.first} ${me.last}</p>
+        </div></div>`,
+
+      // 2. GLOW
+      () => `
+        <div class="glow">
+          <div class="glow-grid-bg" aria-hidden="true"></div>
+          <div class="glow-orb a" aria-hidden="true"></div>
+          <div class="glow-orb b" aria-hidden="true"></div>
+          <div class="glow-orb c" aria-hidden="true"></div>
+          <div class="glow-wrap">
+            <div class="glow-pill reveal" style="--i:0"><span class="glow-dot"></span>Learning to design · ${year}</div>
+            <h1 class="reveal" style="--i:1">Hi, I'm ${me.first} ${me.last}.</h1>
+            <p class="glow-lead reveal" style="--i:2">${me.intro} ${me.about}</p>
+            <div class="glow-cta reveal" style="--i:3">
+              <a class="glow-btn primary" href="#work">See what I'm making</a>
+              ${me.links.map(l => `<a class="glow-btn ghost" href="${l.href}">${l.label}</a>`).join("")}
+            </div>
+            <div class="glow-cards" id="work">
+              ${me.projects.map((p, i) => `
+                <a class="glow-card reveal" style="--i:${4 + i}" href="${p.href}">
+                  <div class="glow-icon" aria-hidden="true">${p.icon}</div>
+                  <h3>${p.title}</h3>
+                  <p>${p.text}</p>
+                  <span class="glow-tag">${p.tag}</span>
+                </a>`).join("")}
+            </div>
+            <p class="glow-foot">© ${year} ${me.first} ${me.last}</p>
+          </div>
+        </div>`,
+
+      // 3. BOLD
+      () => `
+        <div class="bold">
+          <header class="bold-mast reveal" style="--i:0">
+            <span>Issue Nº 01 — ${new Date().toLocaleString("en", { month: "long" })} ${year}</span>
+            <nav>${me.links.map(l => `<a href="${l.href}">${l.label}</a>`).join("")}</nav>
+          </header>
+          <div class="bold-hero">
+            <h1 class="bold-name reveal" style="--i:1">${me.first}<br>${me.last}<span>.</span></h1>
+            <p class="bold-aside reveal" style="--i:2">A personal website<br>by a designer in training.<br><span>Est. ${year}</span></p>
+          </div>
+          <section class="bold-intro reveal" style="--i:2">
+            <div class="bold-label">About</div>
+            <p>${me.intro.replace("one page at a time", "<em>one page at a time</em>")} ${me.about}</p>
+          </section>
+          <div class="bold-section-head reveal" style="--i:3">
+            <h2>Selected work</h2>
+            <span class="bold-label">${String(me.projects.length).padStart(2, "0")} items</span>
+          </div>
+          <div class="bold-cards">
+            ${me.projects.map((p, i) => `
+              <a class="bold-card reveal" style="--i:${4 + i}" href="${p.href}">
+                <div class="bold-num">${String(i + 1).padStart(2, "0")}</div>
+                <h3><span>${p.title}</span></h3>
+                <p>${p.text}</p>
+                <small>${p.tag}</small>
+              </a>`).join("")}
+          </div>
+          <div class="bold-cta">
+            <p>Want to say hello?</p>
+            <a class="bold-btn" href="${me.links.find(l => l.label === "Email").href}">Write to me</a>
+          </div>
+          <footer class="bold-foot"><span>© ${year} ${me.first} ${me.last}</span><span>Made by hand</span></footer>
+        </div>`,
+    ];
+    const themes = ["calm", "glow", "bold"];
+
+    /* Mouse-following light on the Glow cards (just decoration) */
+    document.addEventListener("pointermove", (e) => {
+      const card = e.target.closest?.(".glow-card");
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      card.style.setProperty("--my", `${e.clientY - r.top}px`);
+    });
+
+    /* =========================================================
+       SWITCHER LOGIC (from the prototype skill)
+       Keys: 1 2 3 or ← → to switch, R to replay the animation.
+       ========================================================= */
+    const stage = document.getElementById("stage");
+    const picker = document.querySelector(".proto-picker");
+    const highlight = picker.querySelector(".proto-picker-highlight");
+    const items = [...picker.querySelectorAll(".proto-picker-item:not(.proto-picker-replay)")];
+    const replay = picker.querySelector(".proto-picker-replay");
+    let current = 0;
+
+    function moveHighlight() {
+      const el = items[current];
+      highlight.style.width = el.offsetWidth + "px";
+      highlight.style.transform = `translateX(${el.offsetLeft}px)`;
+    }
+
+    function mount(i) {
+      stage.innerHTML = "";
+      requestAnimationFrame(() => {
+        document.body.dataset.theme = themes[i];
+        stage.innerHTML = variants[i]();
+      });
+    }
+
+    function setActive(i) {
+      if (i < 0 || i >= variants.length) return;
+      current = i;
+      items.forEach((el, j) => {
+        el.toggleAttribute("data-active", j === i);
+        if (j === i) el.setAttribute("aria-current", "true");
+        else el.removeAttribute("aria-current");
+      });
+      moveHighlight();
+      const url = new URL(location);
+      url.searchParams.set("v", i + 1);
+      history.replaceState(null, "", url);
+      mount(i);
+    }
+
+    items.forEach((el, i) => el.addEventListener("click", () => setActive(i)));
+    replay?.addEventListener("click", () => mount(current));
+    window.addEventListener("resize", moveHighlight);
+
+    document.addEventListener("keydown", (e) => {
+      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= variants.length) setActive(num - 1);
+      else if (e.key === "ArrowRight") setActive((current + 1) % variants.length);
+      else if (e.key === "ArrowLeft") setActive((current - 1 + variants.length) % variants.length);
+      else if (e.key === "r" || e.key === "R") mount(current);
+    });
+
+    setActive((parseInt(new URLSearchParams(location.search).get("v"), 10) || 1) - 1);
+    requestAnimationFrame(() => requestAnimationFrame(() => picker.setAttribute("data-ready", "")));
+  </script>
+</body>
+</html>
