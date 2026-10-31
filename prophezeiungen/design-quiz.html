@@ -1,0 +1,155 @@
+<title>Design Taste Quiz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one narrow column, one question per block, options as tappable mini-previews. */
+:root {
+  --bg: #f5f5f7; --surface: #ffffff; --ink: #1d1d1f; --muted: #6e6e73;
+  --line: #d2d2d7; --pick: #0071e3; --red: #c00000;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --serif: "New York", "Iowan Old Style", Georgia, serif;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #000; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a; --pick: #2997ff; --red: #ff6b6b; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #000; --surface: #1c1c1e; --ink: #f5f5f7; --muted: #a1a1a6; --line: #38383a; --pick: #2997ff; --red: #ff6b6b; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 1rem/1.5 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 680px; margin: 0 auto; padding-block: 48px 80px; display: grid; gap: 40px; }
+h1 { font-size: clamp(2rem, 6vw, 2.75rem); line-height: 1.08; letter-spacing: -0.025em; margin: 0 0 8px; font-weight: 700; text-wrap: balance; }
+.intro { color: var(--muted); margin: 0; max-width: 34rem; }
+.q { display: grid; gap: 14px; }
+.q h2 { margin: 0; font-size: 1.25rem; letter-spacing: -0.01em; line-height: 1.25; }
+.q h2 span { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.q .hint { margin: -8px 0 0; color: var(--muted); font-size: 0.92rem; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.opt { all: unset; box-sizing: border-box; cursor: pointer; display: grid; gap: 10px; align-content: start;
+  background: var(--surface); border: 2px solid transparent; border-radius: 16px; padding: 12px;
+  box-shadow: 0 0 0 1px var(--line); transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out); }
+.opt:active { transform: scale(0.97); }
+.opt:focus-visible { outline: 3px solid var(--pick); outline-offset: 2px; }
+.opt[aria-pressed="true"] { border-color: var(--pick); box-shadow: none; }
+.opt b { font-size: 0.95rem; }
+.opt small { color: var(--muted); font-size: 0.82rem; line-height: 1.35; margin-top: -6px; }
+.pv { height: 108px; border-radius: 10px; overflow: hidden; position: relative; font-size: 11px; line-height: 1.35;
+  display: grid; align-content: center; gap: 6px; padding: 12px; }
+/* preview palettes are fixed on purpose: they show a specific look */
+.pv.white { background: #fff; color: #1d1d1f; box-shadow: inset 0 0 0 1px #e5e5ea; }
+.pv.grey { background: #f2f2f4; color: #1d1d1f; }
+.pv.dark { background: #0d0d0f; color: #f2f2f2; }
+.pv.paper { background: #f6f1e7; color: #2a2620; }
+.l { height: 6px; border-radius: 3px; background: currentColor; opacity: 0.18; }
+.l.s { width: 60%; } .l.m { width: 85%; }
+.big { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+.serif { font-family: var(--serif); font-weight: 500; letter-spacing: 0; }
+.mini-card { background: #fff; border-radius: 8px; padding: 7px 8px; color: #1d1d1f; }
+.red { color: #c00000; font-weight: 600; }
+.dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; }
+.row { display: flex; gap: 6px; align-items: center; }
+.sum { background: var(--surface); border-radius: 18px; padding: 20px; display: grid; gap: 12px; box-shadow: 0 0 0 1px var(--line); }
+.sum h2 { margin: 0; font-size: 1.25rem; }
+#out { white-space: pre-wrap; font: 0.9rem/1.5 ui-monospace, Menlo, monospace; margin: 0; color: var(--ink); }
+.btn { all: unset; cursor: pointer; background: var(--pick); color: #fff; padding: 12px 20px; border-radius: 999px; font-weight: 600; justify-self: start; transition: transform 160ms var(--ease-out); }
+.btn:active { transform: scale(0.97); }
+.btn:focus-visible { outline: 3px solid var(--pick); outline-offset: 3px; }
+#note { color: var(--muted); font-size: 0.9rem; margin: 0; min-height: 1.4em; }
+@media (prefers-reduced-motion: reduce) { .opt, .btn { transition: none; } .opt:active, .btn:active { transform: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>What looks right to you?</h1>
+    <p class="intro">Tap the one you like more in each question. There are no wrong answers, go with your gut. At the end, copy your answers and send them to me in the chat.</p>
+  </header>
+  <div id="quiz"></div>
+  <section class="sum">
+    <h2>Your answers</h2>
+    <pre id="out">Pick something above and your answers show up here.</pre>
+    <button class="btn" id="copy" type="button">Copy answers</button>
+    <p id="note" aria-live="polite"></p>
+  </section>
+</div>
+
+<script>
+const V = '<div class="mini-card">Und du, Bethlehem… <span class="red">von den Tagen der Ewigkeit</span></div>';
+const Q = [
+  { t: 'Background', h: 'The color behind everything.', o: [
+    ['Pure white', 'Bright, like apple.com', '<div class="pv white"><div class="big">Prophezeiungen</div><div class="l m"></div><div class="l s"></div></div>'],
+    ['Soft grey', 'Calm, cards stand out', '<div class="pv grey"><div class="big">Prophezeiungen</div><div class="mini-card"><div class="l m"></div></div></div>'],
+    ['Dark', 'Night mode, dramatic', '<div class="pv dark"><div class="big">Prophezeiungen</div><div class="l m"></div><div class="l s"></div></div>'],
+    ['Warm paper', 'A bit like an old Bible page', '<div class="pv paper"><div class="big serif">Prophezeiungen</div><div class="l m"></div><div class="l s"></div></div>'] ] },
+  { t: 'Headline font', h: 'The letters for titles.', o: [
+    ['Modern sans', 'Clean, like iPhone', '<div class="pv white"><div class="big">Himmelfahrt</div><div class="l s"></div></div>'],
+    ['Classic serif', 'Bookish, traditional', '<div class="pv white"><div class="big serif">Himmelfahrt</div><div class="l s"></div></div>'] ] },
+  { t: 'Verse font', h: 'The letters for the Bible text itself.', o: [
+    ['Modern sans', 'Easy to read on a phone', '<div class="pv white" style="font-size:12px">Du bist zur Höhe emporgestiegen, hast Gefangene weggeführt…</div>'],
+    ['Classic serif', 'Feels like reading a Bible', '<div class="pv white serif" style="font-size:13px">Du bist zur Höhe emporgestiegen, hast Gefangene weggeführt…</div>'] ] },
+  { t: 'One accent color', h: 'Used for small things like dates and buttons. Red stays for the verses.', o: [
+    ['No color', 'Only black, grey and your red', '<div class="pv white"><div class="row"><span class="dot" style="background:#1d1d1f"></span><span class="dot" style="background:#86868b"></span><span class="dot" style="background:#c00000"></span></div></div>'],
+    ['Calm blue', 'Like Apple links', '<div class="pv white"><div class="row"><span class="dot" style="background:#0071e3"></span><span class="dot" style="background:#86868b"></span><span class="dot" style="background:#c00000"></span></div></div>'],
+    ['Gold', 'Warm, a bit royal', '<div class="pv white"><div class="row"><span class="dot" style="background:#b8862b"></span><span class="dot" style="background:#86868b"></span><span class="dot" style="background:#c00000"></span></div></div>'] ] },
+  { t: 'How one prophecy is laid out', h: 'Old Testament promise and New Testament fulfillment.', o: [
+    ['Side by side', 'Promise left, fulfillment right (like now)', '<div class="pv grey"><div class="row"><div class="mini-card" style="flex:1">AT<div class="l m"></div></div><div class="mini-card" style="flex:1">NT<div class="l m"></div></div></div></div>'],
+    ['Stacked', 'Promise on top, fulfillment below', '<div class="pv grey"><div class="mini-card">AT<div class="l m"></div></div><div class="mini-card">NT<div class="l m"></div></div></div>'],
+    ['One per screen', 'Swipe or scroll page by page, like a story', '<div class="pv dark" style="text-align:center"><div style="opacity:.6">Kreuzigung</div><div class="big">Hände und Füße durchbohrt</div></div>'] ] },
+  { t: 'Boxes or no boxes', h: 'How each prophecy is framed.', o: [
+    ['Soft cards', 'Rounded boxes with a light shadow', '<div class="pv grey">' + V + '</div>'],
+    ['No boxes', 'Just text and lots of space', '<div class="pv white">Und du, Bethlehem… <span class="red">von den Tagen der Ewigkeit</span></div>'],
+    ['Thin lines', 'Text separated by fine lines', '<div class="pv white"><div style="border-top:1px solid #d2d2d7;padding-top:6px">Und du, Bethlehem… <span class="red">von den Tagen der Ewigkeit</span></div><div style="border-top:1px solid #d2d2d7"></div></div>'] ] },
+  { t: 'How much text at first', h: 'What you see before you tap.', o: [
+    ['Full verses', 'Everything visible right away', '<div class="pv white"><b>Micha 5:1</b><div class="l m"></div><div class="l m"></div><div class="l s"></div></div>'],
+    ['Short, tap to open', 'Only title and red words, tap for the whole verse', '<div class="pv white"><b>Micha 5:1</b><span class="red">„von den Tagen der Ewigkeit“</span><span style="color:#0071e3">Ganzen Vers lesen ›</span></div>'] ] },
+  { t: 'How the red words look', h: 'The part that was fulfilled.', o: [
+    ['Red text', 'Like in your table', '<div class="pv white">…dessen <span class="red">Hervorgehen von Anfang</span> gewesen ist.</div>'],
+    ['Red underline', 'Text stays black, red line below', '<div class="pv white">…dessen <span style="text-decoration:underline;text-decoration-color:#c00000;text-decoration-thickness:2px;text-underline-offset:3px">Hervorgehen von Anfang</span> gewesen ist.</div>'],
+    ['Soft red marker', 'Like a highlighter pen', '<div class="pv white">…dessen <span style="background:#ffdcdc;border-radius:3px;padding:0 2px">Hervorgehen von Anfang</span> gewesen ist.</div>'] ] },
+  { t: 'Finding your place', h: 'How you know where you are on the timeline.', o: [
+    ['Chapter bar on top', 'Geburt · Dienst · Kreuz… sticks at the top', '<div class="pv grey"><div class="mini-card" style="font-weight:600">Geburt · <span style="color:#0071e3">Kreuzigung</span> · Erhöhung</div><div class="l m"></div><div class="l s"></div></div>'],
+    ['Line down the side', 'A line that fills as you scroll (like now)', '<div class="pv white" style="grid-template-columns:4px 1fr;column-gap:10px"><div style="background:linear-gradient(#1d1d1f 55%,#e5e5ea 55%);border-radius:2px;grid-row:span 3"></div><div class="l m"></div><div class="l s"></div><div class="l m"></div></div>'],
+    ['Nothing extra', 'Just the big chapter titles', '<div class="pv white"><div class="big">Kreuzigung</div><div class="l m"></div></div>'] ] },
+  { t: 'Movement', h: 'What happens as you scroll.', o: [
+    ['Still', 'Nothing moves, very calm', '<div class="pv white"><div class="l m"></div><div class="l m"></div><div class="l s"></div></div>'],
+    ['Gentle fade-in', 'Things softly appear as you reach them', '<div class="pv white"><div class="l m"></div><div class="l m" style="opacity:.1"></div><div class="l s" style="opacity:.05"></div></div>'],
+    ['Lively', 'Cards slide and grow, like an Apple product page', '<div class="pv dark"><div class="mini-card" style="transform:scale(.9) translateY(6px);opacity:.7">Psalm 22:17</div></div>'] ] },
+];
+
+const picks = {};
+const quiz = document.getElementById('quiz');
+quiz.style.cssText = 'display:grid;gap:40px';
+Q.forEach((q, qi) => {
+  const s = document.createElement('section');
+  s.className = 'q';
+  s.innerHTML = `<h2><span>${qi + 1}/${Q.length}</span>${q.t}</h2><p class="hint">${q.h}</p><div class="opts"></div>`;
+  const box = s.querySelector('.opts');
+  q.o.forEach(([name, desc, pv], oi) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'opt'; b.id = `q${qi}o${oi}`;
+    b.setAttribute('aria-pressed', 'false');
+    b.innerHTML = `${pv}<b>${name}</b><small>${desc}</small>`;
+    b.addEventListener('pointerdown', () => choose(qi, oi, box));
+    b.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); choose(qi, oi, box); } });
+    box.appendChild(b);
+  });
+  quiz.appendChild(s);
+});
+
+function choose(qi, oi, box) {
+  box.querySelectorAll('.opt').forEach((b, i) => b.setAttribute('aria-pressed', String(i === oi)));
+  picks[qi] = Q[qi].o[oi][0];
+  render();
+}
+function text() {
+  return Q.map((q, i) => `${i + 1}. ${q.t}: ${picks[i] || '(skipped)'}`).join('\n');
+}
+function render() { document.getElementById('out').textContent = text(); }
+
+document.getElementById('copy').addEventListener('click', () => {
+  const note = document.getElementById('note');
+  const t = 'My design answers:\n' + text();
+  navigator.clipboard.writeText(t).then(
+    () => note.textContent = 'Copied. Now paste it into the chat.',
+    () => { const r = document.createRange(); r.selectNodeContents(document.getElementById('out'));
+            const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+            note.textContent = 'Your answers are selected. Copy them and paste them into the chat.'; });
+});
+</script>
