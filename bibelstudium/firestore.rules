@@ -3,7 +3,7 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // Daten nur unter groups/<Gruppencode>/… und nur über die App (anonyme Anmeldung).
     // Die Liste aller Gruppen kann niemand abrufen, also braucht man den Code.
-    match /groups/{code}/{document=**} {
+    match /groups/{code}/{col}/{document=**} {
       allow get, list, create, update, delete: if request.auth != null;
     }
   }
