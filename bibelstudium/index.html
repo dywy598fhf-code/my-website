@@ -210,20 +210,47 @@ const saveLocal=()=>{if(DEMO){store.set("meet2",meet);store.set("topics",topics)
 
 /* ---------- Gemeinsamer Speicher (Firebase) ---------- */
 const R={on:false};
+let code=store.get("code",null); // Gruppencode: die Daten liegen unter groups/<code>/…
+const P=(...parts)=>["groups",code,...parts];
+async function connect(){
+  if(R.F)return;
+  const [A,Au,F]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-auth.js"),import(FB+"firebase-firestore.js")]);
+  const app=A.initializeApp(FIREBASE_CONFIG);
+  await Au.signInAnonymously(Au.getAuth(app));
+  Object.assign(R,{F,db:F.getFirestore(app)});
+}
 async function initFirebase(){
   if(!FIREBASE_CONFIG)return;
+  if(!code){askCode();return}
   $("demoNote").textContent="Verbinde …";
   try{
-    const [A,Au,F]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-auth.js"),import(FB+"firebase-firestore.js")]);
-    const app=A.initializeApp(FIREBASE_CONFIG);
-    await Au.signInAnonymously(Au.getAuth(app));
-    const db=F.getFirestore(app);
-    Object.assign(R,{on:true,F,db,meetRef:F.doc(db,"meetings",meetingKey())});
+    await connect();
+    const {F,db}=R;
+    Object.assign(R,{on:true,meetRef:F.doc(db,...P("meetings",meetingKey()))});
     F.onSnapshot(R.meetRef,d=>{const v=d.data()||{};meet={cook:v.cook||null,status:v.status||{}};render()});
-    F.onSnapshot(F.collection(db,"topics"),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render()});
-    F.onSnapshot(F.collection(db,"prayers"),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
+    F.onSnapshot(F.collection(db,...P("topics")),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render()});
+    F.onSnapshot(F.collection(db,...P("prayers")),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
     $("demoNote").hidden=true;
+    if(!me)pick();
   }catch(e){console.warn("Firebase nicht erreichbar",e);$("demoNote").textContent="Keine Verbindung · Einträge werden gerade nicht geteilt"}
+}
+/* Gruppencode beim ersten Öffnen */
+function askCode(){
+  const bg=document.createElement("div");bg.className="sheet-bg";
+  bg.innerHTML=`<form class="sheet add" id="codeForm" aria-label="Gruppencode"><h2>Gruppencode</h2><p id="codeMsg">Den Code findest du in der WhatsApp-Gruppe.</p>
+    <div class="group"><input id="codeIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Code eingeben"></div>
+    <button class="btn on" id="codeBtn">Weiter</button><button type="button" class="btn" id="codeNew" hidden>Neue Gruppe mit diesem Code anlegen</button></form>`;
+  document.body.appendChild(bg);
+  const norm=()=>$("codeIn").value.trim().toLowerCase().replace(/\s+/g,"-").replace(/[\/.#$\[\]]/g,"");
+  const done=c=>{code=c;store.set("code",c);bg.remove();initFirebase()};
+  $("codeIn").oninput=()=>{$("codeNew").hidden=true;$("codeMsg").textContent="Den Code findest du in der WhatsApp-Gruppe."};
+  $("codeForm").onsubmit=async e=>{e.preventDefault();const c=norm();if(c.length<4){$("codeMsg").textContent="Der Code ist zu kurz.";return}
+    $("codeBtn").disabled=true;$("codeMsg").textContent="Prüfe …";
+    try{await connect();const snap=await R.F.getDoc(R.F.doc(R.db,"groups",c,"meta","info"));
+      if(snap.exists())done(c);else{$("codeMsg").textContent="Diesen Code gibt es noch nicht. Prüfe die Schreibweise.";$("codeNew").hidden=false}
+    }catch(err){console.warn(err);$("codeMsg").textContent="Keine Verbindung. Bitte später nochmal versuchen."}
+    $("codeBtn").disabled=false};
+  $("codeNew").onclick=async()=>{const c=norm();try{await connect();await R.F.setDoc(R.F.doc(R.db,"groups",c,"meta","info"),{created:Date.now()});done(c)}catch(err){console.warn(err);$("codeMsg").textContent="Anlegen hat nicht geklappt."}};
 }
 const remote=fn=>{if(R.on)fn(R.F,R.db).catch(e=>console.warn(e))};
 
@@ -239,17 +266,17 @@ const ops={
     remote(F=>F.setDoc(R.meetRef,{cook:meet.cook,...(on?{status:{[me]:"yes"}}:{})},{merge:true}));
   },
   addTopic(text){const t={id:uid(),text,by:me,votes:[],t:Date.now()};topics.push(t);
-    remote((F,db)=>F.setDoc(F.doc(db,"topics",t.id),{text,by:me,votes:[],t:t.t}))},
+    remote((F,db)=>F.setDoc(F.doc(db,...P("topics",t.id)),{text,by:me,votes:[],t:t.t}))},
   vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
     t.votes=on?[...t.votes,me]:t.votes.filter(n=>n!==me);
-    remote((F,db)=>F.updateDoc(F.doc(db,"topics",id),{votes:on?F.arrayUnion(me):F.arrayRemove(me)}))},
+    remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),{votes:on?F.arrayUnion(me):F.arrayRemove(me)}))},
   addPrayer(name,text){const p={id:uid(),name,text,by:me,done:false,t:Date.now()};prayers.push(p);
-    remote((F,db)=>F.setDoc(F.doc(db,"prayers",p.id),{name,text,by:me,done:false,t:p.t}))},
+    remote((F,db)=>F.setDoc(F.doc(db,...P("prayers",p.id)),{name,text,by:me,done:false,t:p.t}))},
   toggleDone(id){const p=prayers.find(p=>p.id===id);if(!p||p.by!==me)return;p.done=!p.done;
-    remote((F,db)=>F.updateDoc(F.doc(db,"prayers",id),{done:p.done}))},
+    remote((F,db)=>F.updateDoc(F.doc(db,...P("prayers",id)),{done:p.done}))},
   remove(kind,id){const list=kind==="topic"?topics:prayers,x=list.find(i=>i.id===id);if(!x||x.by!==me)return;
     if(kind==="topic")topics=topics.filter(i=>i.id!==id);else prayers=prayers.filter(i=>i.id!==id);
-    remote((F,db)=>F.deleteDoc(F.doc(db,kind==="topic"?"topics":"prayers",id)))}
+    remote((F,db)=>F.deleteDoc(F.doc(db,...P(kind==="topic"?"topics":"prayers",id))))}
 };
 
 /* ---------- Helfer ---------- */
@@ -359,7 +386,7 @@ function route(){
 }
 addEventListener("hashchange",route);
 route();render();
-if(!me)pick();
+if(!me&&(DEMO||code))pick();
 initFirebase();
 
 /* ---------- Als App installierbar (offline-fähig) ---------- */
