@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bibelabend</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--pwa-->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Bibelabend">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f1ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f0f10" media="(prefers-color-scheme: dark)">
+<!--/pwa-->
+<style>
+/* Layout: iOS-style grouped lists on a soft ground, one column, tab bar at the bottom */
+:root{
+  --bg:#f2f1ee; --card:#ffffff; --fg:#1c1c1e; --muted:#7a7873; --line:#e4e2dd;
+  --btn:#1c1c1e; --btn-fg:#ffffff; --soft:#ebe9e4; --ok:#2e9e6a;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --ease: cubic-bezier(.23,1,.32,1);
+  color-scheme:light;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f0f10; --card:#1c1c1e; --fg:#f2f2f2; --muted:#9a9890; --line:#2c2c2e;
+  --btn:#f2f2f2; --btn-fg:#111; --soft:#2a2a2c; --ok:#4cc38a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f0f10; --card:#1c1c1e; --fg:#f2f2f2; --muted:#9a9890; --line:#2c2c2e;
+  --btn:#f2f2f2; --btn-fg:#111; --soft:#2a2a2c; --ok:#4cc38a; color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 var(--font);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+button,input,textarea{font:inherit;color:inherit}
+button{border:0;background:none;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;padding:0}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+[hidden]{display:none!important}
+.wrap{max-width:520px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 120px;display:flex;flex-direction:column;gap:28px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.me{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border-radius:999px;background:var(--card);font-size:15px;font-weight:500;flex:none}
+.dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:600;flex:none}
+.dot.sm{width:20px;height:20px;font-size:10px}
+.label{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px 16px}
+.group{background:var(--card);border-radius:14px;overflow:hidden}
+.date{padding:18px 16px}
+.date b{display:block;font-size:22px;letter-spacing:-.01em}
+.date span{color:var(--muted)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;min-height:52px}
+.row+.row{border-top:1px solid var(--line)}
+.row .name{flex:1;min-width:0;overflow-wrap:anywhere}
+.row .sub{display:block;font-size:14px;color:var(--muted)}
+.tag{font-size:13px;color:var(--muted);flex:none}
+.empty{padding:16px;color:var(--muted)}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{height:50px;border-radius:12px;background:var(--soft);font-weight:600;transition:transform .16s var(--ease),background .2s}
+.btn:active{transform:scale(.97)}
+.btn.on{background:var(--btn);color:var(--btn-fg)}
+.wide{grid-column:1/-1}
+.note{font-size:13px;color:var(--muted);text-align:center;margin:0}
+/* add form */
+.add{display:flex;flex-direction:column;gap:0}
+.add input{width:100%;border:0;background:transparent;padding:14px 16px;font-size:16px;min-width:0}
+.add input+input{border-top:1px solid var(--line)}
+.add input::placeholder{color:var(--muted)}
+.add .btn{margin-top:10px;width:100%}
+.add .btn:disabled{opacity:.4}
+/* small pill buttons in rows */
+.pill{display:flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;background:var(--soft);font-size:14px;font-weight:600;flex:none;transition:transform .16s var(--ease)}
+.pill:active{transform:scale(.95)}
+.pill.on{background:var(--btn);color:var(--btn-fg)}
+.pill.done.on{background:var(--ok);color:#fff}
+.del{font-size:13px;color:var(--muted);padding:6px 0 6px 4px;flex:none}
+.del.arm{color:#d9485f;font-weight:600}
+.voters{display:flex;gap:2px;margin-top:4px}
+/* tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:5;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px max(16px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted);padding:4px 16px;text-decoration:none}
+.tab svg{width:24px;height:24px}
+.tab.active{color:var(--fg)}
+/* name sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:flex-end;justify-content:center;z-index:20;animation:fade .2s var(--ease)}
+.sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:16px 16px 0 0;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:up .35s var(--ease);display:flex;flex-direction:column;gap:14px}
+.sheet h2{margin:0;font-size:20px}
+.sheet p{margin:0;color:var(--muted)}
+.row.pick{width:100%;text-align:left}
+.row.pick:active{background:var(--soft)}
+@keyframes up{from{transform:translateY(100%)}}
+@keyframes fade{from{opacity:0}}
+.view{display:flex;flex-direction:column;gap:28px;animation:pop .3s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Bibelabend</h1>
+    <button class="me" id="me" aria-label="Person wechseln"></button>
+  </header>
+
+  <!-- Treffen -->
+  <div class="view" id="v-treffen">
+    <section>
+      <p class="label">Nächstes Treffen</p>
+      <div class="group date"><b id="when"></b><span>19:30 Uhr</span></div>
+    </section>
+    <section>
+      <p class="label">Es kocht</p>
+      <div class="group" id="cook"></div>
+    </section>
+    <section>
+      <p class="label" id="countLabel">Dabei</p>
+      <div class="group" id="list"></div>
+    </section>
+    <div class="actions">
+      <button class="btn" id="bYes">Ich bin dabei</button>
+      <button class="btn" id="bNo">Ich kann nicht</button>
+      <button class="btn wide" id="bCook">Ich koche</button>
+    </div>
+  </div>
+
+  <!-- Themen -->
+  <div class="view" id="v-themen" hidden>
+    <form class="add" id="fTopic">
+      <p class="label">Neues Thema</p>
+      <div class="group"><input id="tTopic" maxlength="120" placeholder="Worüber möchtest du reden?" autocomplete="off"></div>
+      <button class="btn on" id="bTopic" disabled>Hinzufügen</button>
+    </form>
+    <section>
+      <p class="label">Wünsche</p>
+      <div class="group" id="topics"></div>
+    </section>
+  </div>
+
+  <!-- Gebet -->
+  <div class="view" id="v-gebet" hidden>
+    <form class="add" id="fPrayer">
+      <p class="label">Neues Gebetsanliegen</p>
+      <div class="group">
+        <input id="pName" maxlength="40" placeholder="Vorname" autocomplete="off">
+        <input id="pText" maxlength="140" placeholder="Wofür sollen wir beten? (kurz)" autocomplete="off">
+      </div>
+      <button class="btn on" id="bPrayer" disabled>Hinzufügen</button>
+    </form>
+    <section>
+      <p class="label" id="openLabel">Wir beten für</p>
+      <div class="group" id="prayOpen"></div>
+    </section>
+    <section id="doneSec">
+      <p class="label">Erhört</p>
+      <div class="group" id="prayDone"></div>
+    </section>
+    <p class="note">Bitte nur Vornamen, damit eure Freunde geschützt bleiben.</p>
+  </div>
+
+  <p class="note">Testversion mit Beispielnamen. Einträge bleiben vorerst nur auf deinem Handy.</p>
+</div>
+
+<nav class="tabs">
+  <a class="tab" href="#treffen" data-v="treffen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>Treffen</a>
+  <a class="tab" href="#themen" data-v="themen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3V19.5H8a3 3 0 0 1-3-3z"/><path d="M9 9h6M9 13h4"/></svg>Themen</a>
+  <a class="tab" href="#gebet" data-v="gebet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg>Gebet</a>
+</nav>
+
+<script>
+/* ---------- Personen und Farben (Beispielnamen, später ersetzen) ---------- */
+const PEOPLE=[
+  {n:"Kevin",c:"#2f6fdb"},{n:"Anna",c:"#d9485f"},{n:"Jonas",c:"#2e9e6a"},
+  {n:"Lea",c:"#c27c0e"},{n:"Micha",c:"#7b4fd6"},{n:"Sarah",c:"#d0557f"},
+  {n:"Tim",c:"#1597a6"},{n:"Ruth",c:"#8a6a4f"},{n:"David",c:"#5a6b7d"},{n:"Esther",c:"#a3456b"}
+];
+const MEETING_WEEKDAY=4; // 0 = Sonntag … 4 = Donnerstag
+
+/* ---------- Speicher: vorerst nur auf diesem Handy. Später gemeinsam online. ---------- */
+const store={
+  get(k,d){try{const v=localStorage.getItem("ba-"+k);return v?JSON.parse(v):d}catch(e){return d}},
+  set(k,v){try{localStorage.setItem("ba-"+k,JSON.stringify(v))}catch(e){}}
+};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+let me=store.get("me",null);
+let meet=store.get("meet",{cook:"Anna",yes:["Anna","Jonas","Lea","Tim"],no:["Micha"]});
+let topics=store.get("topics",[
+  {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"]},
+  {id:"t2",text:"Das Buch Jona",by:"Jonas",votes:["Anna"]}
+]);
+let prayers=store.get("prayers",[
+  {id:"p1",name:"Markus",text:"Neue Arbeitsstelle",by:"Tim",done:false},
+  {id:"p2",name:"Julia",text:"Gesundheit nach der OP",by:"Anna",done:true}
+]);
+const saveAll=()=>{store.set("meet",meet);store.set("topics",topics);store.set("prayers",prayers)};
+
+/* ---------- Helfer ---------- */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const color=n=>(PEOPLE.find(p=>p.n===n)||{}).c||"#888";
+const dot=(n,cls="")=>`<span class="dot ${cls}" style="background:${color(n)}" title="${esc(n)}">${esc(n[0])}</span>`;
+function nextMeeting(){
+  const d=new Date();d.setHours(0,0,0,0);
+  d.setDate(d.getDate()+((MEETING_WEEKDAY-d.getDay()+7)%7));
+  return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+}
+function needMe(){if(!me){pick();return false}return true}
+const delBtn=(id,kind)=>`<button class="del" data-del="${id}" data-kind="${kind}">Löschen</button>`;
+
+/* ---------- Ansichten ---------- */
+function renderMe(){
+  $("me").innerHTML=me?dot(me)+esc(me):'<span class="dot" style="background:var(--muted)">?</span>Wer bist du?';
+}
+function renderTreffen(){
+  $("when").textContent=nextMeeting();
+  $("cook").innerHTML=meet.cook
+    ?`<div class="row">${dot(meet.cook)}<span class="name">${esc(meet.cook)}</span><span class="tag">kocht</span></div>`
+    :`<div class="empty">Noch niemand. Tippe auf „Ich koche“.</div>`;
+  $("countLabel").textContent=`Dabei · ${meet.yes.length}`;
+  const rows=meet.yes.map(n=>`<div class="row">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span>${n===meet.cook?'<span class="tag">kocht</span>':""}</div>`)
+    .concat(meet.no.map(n=>`<div class="row" style="opacity:.5">${dot(n)}<span class="name">${esc(n)}</span><span class="tag">kann nicht</span></div>`));
+  $("list").innerHTML=rows.join("")||`<div class="empty">Noch keine Zusagen.</div>`;
+  $("bYes").classList.toggle("on",meet.yes.includes(me));
+  $("bNo").classList.toggle("on",meet.no.includes(me));
+  $("bCook").classList.toggle("on",meet.cook===me);
+  $("bCook").textContent=meet.cook===me?"Ich koche nicht mehr":"Ich koche";
+}
+function renderThemen(){
+  const list=[...topics].sort((a,b)=>b.votes.length-a.votes.length);
+  $("topics").innerHTML=list.map(t=>{
+    const mine=t.votes.includes(me);
+    return `<div class="row">${dot(t.by)}
+      <span class="name">${esc(t.text)}
+        <span class="voters">${t.votes.map(v=>dot(v,"sm")).join("")}</span></span>
+      ${t.by===me?delBtn(t.id,"topic"):""}
+      <button class="pill ${mine?"on":""}" data-vote="${t.id}" aria-pressed="${mine}">Ich auch · ${t.votes.length}</button>
+    </div>`}).join("")||`<div class="empty">Noch keine Themen. Schreib oben das erste auf.</div>`;
+}
+function renderGebet(){
+  const row=p=>`<div class="row">${dot(p.by)}
+    <span class="name">${esc(p.name)}<span class="sub">${esc(p.text)}</span></span>
+    ${p.by===me?delBtn(p.id,"prayer"):""}
+    ${p.by===me?`<button class="pill done ${p.done?"on":""}" data-done="${p.id}" aria-pressed="${p.done}">${p.done?"✓ Erhört":"Erhört?"}</button>`:(p.done?'<span class="tag">✓</span>':"")}
+  </div>`;
+  const open=prayers.filter(p=>!p.done),done=prayers.filter(p=>p.done);
+  $("openLabel").textContent=`Wir beten für · ${open.length}`;
+  $("prayOpen").innerHTML=open.map(row).join("")||`<div class="empty">Gerade keine offenen Anliegen.</div>`;
+  $("prayDone").innerHTML=done.map(row).join("");
+  $("doneSec").hidden=!done.length;
+}
+function render(){renderMe();renderTreffen();renderThemen();renderGebet()}
+
+/* ---------- Treffen: Knöpfe ---------- */
+const drop=n=>{meet.yes=meet.yes.filter(x=>x!==n);meet.no=meet.no.filter(x=>x!==n)};
+function act(fn){if(!needMe())return;fn();saveAll();render()}
+$("bYes").onclick=()=>act(()=>{const was=meet.yes.includes(me);drop(me);if(meet.cook===me&&was)meet.cook=null;if(!was)meet.yes.push(me)});
+$("bNo").onclick=()=>act(()=>{const was=meet.no.includes(me);drop(me);if(meet.cook===me)meet.cook=null;if(!was)meet.no.push(me)});
+$("bCook").onclick=()=>act(()=>{if(meet.cook===me){meet.cook=null}else{meet.cook=me;drop(me);meet.yes.unshift(me)}});
+
+/* ---------- Themen und Gebet: Formulare ---------- */
+$("tTopic").oninput=()=>$("bTopic").disabled=!$("tTopic").value.trim();
+$("fTopic").onsubmit=e=>{e.preventDefault();const v=$("tTopic").value.trim();if(!v)return;
+  act(()=>{topics.push({id:uid(),text:v,by:me,votes:[]});$("tTopic").value="";$("bTopic").disabled=true})};
+const pOk=()=>$("bPrayer").disabled=!($("pName").value.trim()&&$("pText").value.trim());
+$("pName").oninput=pOk;$("pText").oninput=pOk;
+$("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$("pText").value.trim();if(!n||!t)return;
+  act(()=>{prayers.unshift({id:uid(),name:n,text:t,by:me,done:false});$("pName").value="";$("pText").value="";pOk()})};
+
+/* Klicks in Listen: Ich auch, Erhört, Löschen (zweimal tippen) */
+document.addEventListener("click",e=>{
+  const v=e.target.closest("[data-vote]"),d=e.target.closest("[data-done]"),x=e.target.closest("[data-del]");
+  if(v)act(()=>{const t=topics.find(t=>t.id===v.dataset.vote);t.votes=t.votes.includes(me)?t.votes.filter(n=>n!==me):[...t.votes,me]});
+  if(d)act(()=>{const p=prayers.find(p=>p.id===d.dataset.done);if(p.by===me)p.done=!p.done});
+  if(x){
+    if(!x.classList.contains("arm")){x.classList.add("arm");x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent="Löschen"}},3000);return}
+    act(()=>{const id=x.dataset.del;if(x.dataset.kind==="topic")topics=topics.filter(t=>!(t.id===id&&t.by===me));else prayers=prayers.filter(p=>!(p.id===id&&p.by===me))});
+  }
+});
+
+/* ---------- Wer bist du? ---------- */
+$("me").onclick=pick;
+function pick(){
+  if(document.querySelector(".sheet-bg"))return;
+  const bg=document.createElement("div");bg.className="sheet-bg";
+  bg.innerHTML=`<div class="sheet" role="dialog" aria-label="Wer bist du?"><h2>Wer bist du?</h2><p>Einmal antippen. Dein Handy merkt es sich.</p>
+  <div class="group">${PEOPLE.map(p=>`<button class="row pick" data-n="${esc(p.n)}">${dot(p.n)}<span class="name">${esc(p.n)}</span></button>`).join("")}</div></div>`;
+  bg.onclick=e=>{const b=e.target.closest("[data-n]");if(b){me=b.dataset.n;store.set("me",me);render()}if(b||e.target===bg)bg.remove()};
+  document.body.appendChild(bg);
+}
+
+/* ---------- Seiten wechseln ---------- */
+const TITLES={treffen:"Bibelabend",themen:"Themen",gebet:"Gebet"};
+function route(){
+  const v=(location.hash||"#treffen").slice(1),view=TITLES[v]?v:"treffen";
+  for(const k in TITLES)$("v-"+k).hidden=k!==view;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.v===view));
+  $("title").textContent=TITLES[view];
+  window.scrollTo(0,0);
+}
+addEventListener("hashchange",route);
+route();render();
+if(!me)pick();
+
+/* ---------- Als App installierbar (offline-fähig) ---------- */
+if("serviceWorker" in navigator&&location.protocol==="https:"){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+</script>
+</body>
+</html>
