@@ -376,6 +376,8 @@ const ops={
     remote((F,db)=>F.setDoc(F.doc(db,...P("topics",t.id)),{text,by:me,votes:[],t:t.t}))},
   setDiscussed(id,on){const t=topics.find(t=>t.id===id);if(!t)return;t.discussed=on?Date.now():null;
     remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),{discussed:t.discussed}))},
+  editNotes(id,notes){const t=topics.find(t=>t.id===id);if(!t||!me)return;t.notes=notes;t.noteBy=me;
+    remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),{notes,noteBy:me}))},
   editTopic(id,fields){const t=topics.find(t=>t.id===id);if(!t||t.by!==me)return;Object.assign(t,fields);
     remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),fields))},
   vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
@@ -499,6 +501,7 @@ $("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$
 
 /* ---------- Notizseite zu einem Thema ---------- */
 let openTopic=null,noteTimer=null;
+const pickLater=()=>{document.querySelector(".sheet-bg")?.remove();pick()};
 function topicSheet(id){
   openTopic=id;
   const bg=openSheet("topic",`<div id="topicBody"></div>`,"tall");if(!bg)return;
@@ -508,23 +511,21 @@ function fillTopic(){
   const t=topics.find(t=>t.id===openTopic),box=$("topicBody");if(!box)return;
   if(!t){document.querySelector(".sheet-bg")?.remove();return}
   const mine=t.by===me;
-  if(mine&&box.dataset.id===t.id&&box.contains(document.activeElement))return; // nicht beim Tippen überschreiben
+  if(box.dataset.id===t.id&&box.contains(document.activeElement)&&document.activeElement.matches("input,textarea"))return; // nicht beim Tippen überschreiben
   box.dataset.id=t.id;
   box.innerHTML=`<div style="display:flex;align-items:center;gap:10px">${dot(t.by)}<span class="tag">${esc(t.by)}${mine?" (du)":""} · 🙋 ${t.votes.length}</span>
       <span style="flex:1"></span><button class="del" id="tDone">Fertig</button></div>
     ${mine?`<input class="title-in" id="tTitle" maxlength="120" value="${esc(t.text)}" aria-label="Titel">`:`<h2 style="font-size:24px">${esc(t.text)}</h2>`}
-    <div class="group">${mine?`<textarea class="note-in" id="tNotes" placeholder="Beschreibe deine Idee genauer: Bibelstellen, Fragen, Gedanken …">${esc(t.notes||"")}</textarea>`
-      :`<div style="padding:14px 16px;white-space:pre-wrap;min-height:80px">${t.notes?esc(t.notes):'<span style="color:var(--muted)">Noch keine Notiz.</span>'}</div>`}</div>
-    ${mine?`<p class="note" id="tSaved">Wird automatisch gespeichert.</p>`:""}
+    <div class="group"><textarea class="note-in" id="tNotes" placeholder="Bibelstellen, Fragen, Gedanken … Alle können hier ergänzen.">${esc(t.notes||"")}</textarea></div>
+    <p class="note" id="tSaved">${t.noteBy?`Zuletzt ergänzt von ${esc(t.noteBy)}`:"Wird automatisch gespeichert."}</p>
     <button class="btn ${t.discussed?"":"on"}" id="tArch">${t.discussed?"Wieder offen":"Als besprochen markieren"}</button>
     ${t.discussed?`<p class="note">Besprochen am ${fmtDay(t.discussed)} · liegt im Archiv</p>`:""}
     ${mine?`<button class="del" data-del="${t.id}" data-kind="topic" style="align-self:center">Thema löschen</button>`:""}`;
   $("tArch").onclick=()=>{if(!needMe())return;const on=!t.discussed;ops.setDiscussed(t.id,on);saveLocal();renderThemen();if(on)document.querySelector(".sheet-bg")?.remove();else fillTopic()};
   $("tDone").onclick=()=>document.querySelector(".sheet-bg")?.remove();
-  if(mine){
-    const save=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>{const v=$("tTitle").value.trim();ops.editTopic(t.id,{text:v||t.text,notes:$("tNotes").value});saveLocal();renderThemen();$("tSaved").textContent="Gespeichert"},500)};
-    $("tTitle").oninput=save;$("tNotes").oninput=save;
-  }
+  $("tNotes").onfocus=()=>{if(!me){$("tNotes").blur();pickLater()}};
+  $("tNotes").oninput=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>{ops.editNotes(t.id,$("tNotes").value);saveLocal();renderThemen();$("tSaved").textContent="Gespeichert"},500)};
+  if(mine)$("tTitle").oninput=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>{const v=$("tTitle").value.trim();if(v)ops.editTopic(t.id,{text:v});saveLocal();renderThemen();$("tSaved").textContent="Gespeichert"},500)};
 }
 
 /* Klicks in Listen: Treffen, 🙋, Erhört, Thema öffnen, Löschen (zweimal tippen) */
