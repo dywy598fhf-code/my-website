@@ -150,7 +150,7 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
       <p class="label">Neu</p>
       <div class="group">
         <input id="pName" maxlength="40" placeholder="Vorname" autocomplete="off">
-        <input id="pText" maxlength="140" placeholder="Anliegen" autocomplete="off">
+        <input id="pText" maxlength="140" placeholder="Anliegen (optional)" autocomplete="off">
       </div>
       <button class="btn on" id="bPrayer" disabled>Hinzufügen</button>
     </form>
@@ -340,7 +340,7 @@ function renderGebet(){
   $("prayers").innerHTML=by.map(a=>`<div class="group">
     <div class="row head">${dot(a)}<span class="name">${esc(a)}${a===me?" (du)":""}</span></div>
     ${prayers.filter(p=>p.by===a).sort((x,y)=>(y.t||0)-(x.t||0)).map(p=>`<div class="row sub-row ${p.done?"done":""}">
-      <span class="name">${esc(p.name)}<span class="sub">${esc(p.text)}</span></span>
+      <span class="name">${esc(p.name)}${p.text?`<span class="sub">${esc(p.text)}</span>`:""}</span>
       ${a===me?delBtn(p.id,"prayer")+`<button class="pill done ${p.done?"on":""}" data-done="${p.id}" aria-pressed="${p.done}" aria-label="Erhört">✓</button>`:(p.done?'<span class="tag">✓ erhört</span>':"")}
     </div>`).join("")}
   </div>`).join("")||`<div class="group"><div class="empty">Noch keine Anliegen</div></div>`;
@@ -357,9 +357,9 @@ $("bCook").onclick=()=>act(()=>ops.setCook(meet.cook!==me));
 $("tTopic").oninput=()=>$("bTopic").disabled=!$("tTopic").value.trim();
 $("fTopic").onsubmit=e=>{e.preventDefault();const v=$("tTopic").value.trim();if(!v)return;
   act(()=>{ops.addTopic(v);$("tTopic").value="";$("bTopic").disabled=true})};
-const pOk=()=>$("bPrayer").disabled=!($("pName").value.trim()&&$("pText").value.trim());
+const pOk=()=>$("bPrayer").disabled=!$("pName").value.trim();
 $("pName").oninput=pOk;$("pText").oninput=pOk;
-$("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$("pText").value.trim();if(!n||!t)return;
+$("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$("pText").value.trim();if(!n)return;
   act(()=>{ops.addPrayer(n,t);$("pName").value="";$("pText").value="";pOk()})};
 
 /* Klicks in Listen: 🙋, Erhört, Löschen (zweimal tippen) */
