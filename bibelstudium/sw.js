@@ -1,5 +1,5 @@
 // Speichert die App auf dem Handy, damit sie schnell startet und auch offline öffnet.
-const CACHE = "bibelabend-v11";
+const CACHE = "bibelabend-v12";
 const FILES = ["./", "index.html", "manifest.webmanifest", "icon-180.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
 self.addEventListener("activate", e => {
