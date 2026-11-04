@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Erfüllt</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Prophezeiungen aus dem Alten Testament, die Jesus erfüllt hat, von der Vorexistenz bis zur Himmelfahrt.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Erfüllt">
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b1814" media="(prefers-color-scheme: dark)">
+<style>
+/* Layout: one column on warm paper. A thin line down the left fills as you scroll;
+   each prophecy is one soft card: promise on top, fulfilment below. */
+:root {
+  --paper: #f6f1e7;
+  --card: #fffdf8;
+  --ink: #1f1c18;
+  --muted: #7a7166;
+  --hair: #e6dfd1;
+  --red: #c00000;
+  --shadow: 0 1px 2px rgb(60 45 20 / 0.06), 0 8px 24px rgb(60 45 20 / 0.07);
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --serif: "New York", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #1b1814; --card: #25211c; --ink: #f1ebe0; --muted: #a39887; --hair: #383128;
+  --red: #ff6b5e; --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --paper: #1b1814; --card: #25211c; --ink: #f1ebe0; --muted: #a39887; --hair: #383128;
+  --red: #ff6b5e; --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.25); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); background: var(--paper); z-index: 10; }
+.app { max-width: 620px; margin: 0 auto; padding-block: calc(env(safe-area-inset-top, 0px) + 56px) calc(env(safe-area-inset-bottom, 0px) + 96px); }
+
+/* Header */
+.kicker { font-size: 0.8125rem; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); margin: 0 0 10px; }
+h1 { font-size: clamp(2.5rem, 11vw, 3.75rem); font-weight: 700; letter-spacing: -0.035em; line-height: 1.02; margin: 0; text-wrap: balance; }
+.lead { font-family: var(--serif); font-size: 1.125rem; line-height: 1.55; color: var(--muted); margin: 20px 0 0; max-width: 32rem; }
+.lead cite { display: block; font: 600 0.8125rem/1.4 var(--sans); font-style: normal; margin-top: 6px; color: var(--ink); }
+
+/* Timeline */
+.timeline { position: relative; margin-top: 64px; padding-left: 28px; display: grid; gap: 64px; }
+.rail, .rail-fill { position: absolute; left: 0; top: 6px; bottom: 0; width: 2px; border-radius: 1px; }
+.rail { background: var(--hair); }
+.rail-fill { background: var(--ink); transform-origin: top; transform: scaleY(var(--p, 1)); }
+
+.chapter { position: relative; display: grid; gap: 16px; }
+.chapter::before { /* dot on the rail */
+  content: ""; position: absolute; left: -35px; top: 6px; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--paper); border: 2px solid var(--ink);
+}
+.stage { font-size: 0.8125rem; font-weight: 600; color: var(--muted); margin: 0; }
+h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.022em; line-height: 1.12; margin: -10px 0 0; text-wrap: balance; }
+
+.card { background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 22px 22px 24px; display: grid; gap: 20px; }
+.part { display: grid; gap: 8px; min-width: 0; }
+.label { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.ref { font-size: 1.0625rem; font-weight: 650; letter-spacing: -0.01em; margin: 0; }
+.verse { font-family: var(--serif); font-size: 1.0625rem; line-height: 1.6; margin: 0; }
+.verse sup { font: 600 0.65em var(--sans); color: var(--muted); margin-right: 2px; }
+.verse em { font-style: normal; color: var(--red); }
+.ref + .verse + .ref { margin-top: 10px; }
+.join { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.75rem; font-weight: 600; }
+.join::before, .join::after { content: ""; flex: 1; height: 1px; background: var(--hair); }
+
+.end { margin-top: 72px; color: var(--muted); font-size: 0.8125rem; text-align: center; }
+
+/* Lively scroll motion: cards rise and settle with a little spring.
+   Resting state stays readable; motion only adds the arrival. */
+.js .chapter .card { transform: translateY(28px) scale(0.96); opacity: 0.35;
+  transition: transform 700ms var(--spring), opacity 500ms var(--ease-out); }
+.js .chapter.in .card { transform: none; opacity: 1; }
+.js .chapter::before { transform: scale(0.6); transition: transform 400ms var(--spring), background-color 300ms var(--ease-out); }
+.js .chapter.in::before { transform: scale(1); background: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .js .chapter .card { transform: none; opacity: 1; transition: none; }
+  .js .chapter::before { transform: none; transition: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <p class="kicker">Prophezeiungen die Jesus erfüllte</p>
+    <h1>Erfüllt.</h1>
+    <p class="lead">„Und er begann bei Mose und bei allen Propheten und legte ihnen in allen Schriften aus, was sich auf ihn bezieht.“<cite>Lukas 24:27</cite></p>
+  </header>
+
+  <main class="timeline" id="tl">
+    <div class="rail" aria-hidden="true"></div>
+    <div class="rail-fill" aria-hidden="true"></div>
+
+    <section class="chapter">
+      <p class="stage">Vorexistenz &amp; Abstammung</p>
+      <h2>Der vorexistierende Sohn</h2>
+      <article class="card">
+        <div class="part">
+          <span class="label">Altes Testament</span>
+          <p class="ref">Micha 5:1</p>
+          <p class="verse">Und du, Bethlehem-Ephrata, du bist zwar gering unter den Hauptorten von Juda; aber aus dir soll mir hervorkommen, der Herrscher über Israel werden soll, dessen <em>Hervorgehen von Anfang, von den Tagen der Ewigkeit her gewesen ist.</em></p>
+        </div>
+        <div class="join">erfüllt in</div>
+        <div class="part">
+          <span class="label">Neues Testament</span>
+          <p class="ref">Johannes 1:1, 14</p>
+          <p class="verse"><sup>1</sup><em>Im Anfang war das Wort, und das Wort war bei Gott, und das Wort war Gott.</em> <sup>14</sup><em>Und das Wort wurde Fleisch und wohnte unter uns;</em> und wir sahen seine Herrlichkeit, eine Herrlichkeit als des Eingeborenen vom Vater, voller Gnade und Wahrheit.</p>
+        </div>
+      </article>
+    </section>
+
+    <section class="chapter">
+      <p class="stage">Kreuzigung</p>
+      <h2>Hände und Füße durchbohrt</h2>
+      <article class="card">
+        <div class="part">
+          <span class="label">Altes Testament</span>
+          <p class="ref">Psalm 22:17</p>
+          <p class="verse">Denn Hunde umringen mich, eine Rotte von Übeltätern umgibt mich; <em>sie haben meine Hände und meine Füße durchgraben.</em></p>
+        </div>
+        <div class="join">erfüllt in</div>
+        <div class="part">
+          <span class="label">Neues Testament</span>
+          <p class="ref">Johannes 20:25</p>
+          <p class="verse">Da sagten ihm die anderen Jünger: Wir haben den Herrn gesehen! <em>Er aber sprach zu ihnen: Wenn ich nicht an seinen Händen das Nägelmal sehe und meinen Finger in das Nägelmal lege und meine Hand in seine Seite lege, so werde ich es niemals glauben!</em></p>
+        </div>
+      </article>
+    </section>
+
+    <section class="chapter">
+      <p class="stage">Erhöhung</p>
+      <h2>Himmelfahrt</h2>
+      <article class="card">
+        <div class="part">
+          <span class="label">Altes Testament</span>
+          <p class="ref">Psalm 68:19</p>
+          <p class="verse"><em>Du bist zur Höhe emporgestiegen,</em> hast Gefangene weggeführt; du hast Gaben empfangen unter den Menschen, auch den Widerspenstigen, damit Gott, der HERR, eine Wohnung habe.</p>
+        </div>
+        <div class="join">erfüllt in</div>
+        <div class="part">
+          <span class="label">Neues Testament</span>
+          <p class="ref">Lukas 24:51</p>
+          <p class="verse"><em>Und es geschah, indem er sie segnete, schied er von ihnen und wurde aufgehoben in den Himmel.</em></p>
+          <p class="ref">Apostelgeschichte 1:9</p>
+          <p class="verse"><em>Und als er dies gesagt hatte, wurde er vor ihren Augen emporgehoben, und eine Wolke nahm ihn auf von ihren Augen weg.</em></p>
+        </div>
+      </article>
+    </section>
+  </main>
+
+  <p class="end">Bibeltext: Schlachter 2000</p>
+</div>
+
+<script>
+(() => {
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const tl = document.getElementById('tl');
+  const chapters = tl.querySelectorAll('.chapter');
+
+  if ('IntersectionObserver' in window) {
+    document.documentElement.classList.add('js');
+    const io = new IntersectionObserver(es => es.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -12% 0px' });
+    chapters.forEach(c => io.observe(c));
+  }
+
+  if (!reduce) {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      const r = tl.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, (innerHeight * 0.55 - r.top) / r.height));
+      tl.style.setProperty('--p', p.toFixed(3));
+    };
+    addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(update); }, { passive: true });
+    addEventListener('resize', update);
+    update();
+  }
+
+  // Works offline once installed on the home screen.
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !location.hostname.endsWith('claude.ai')) {
+    try { navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
+  }
+})();
+</script>
+</body>
+</html>
