@@ -101,7 +101,7 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 .gear svg{width:22px;height:22px}
 .chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px 2px;-webkit-overflow-scrolling:touch}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;height:36px;padding:0 14px;border-radius:999px;background:var(--card);font-size:14px;font-weight:600;white-space:nowrap}
+.chip{flex:none;display:inline-flex;align-items:center;justify-content:center;line-height:1;height:36px;padding:0 14px;border-radius:999px;background:var(--card);font-size:14px;font-weight:600;white-space:nowrap}
 .chip.on{background:var(--btn);color:var(--btn-fg)}
 .chip.add{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
 .date .lbl{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
@@ -258,6 +258,16 @@ const saveLocal=()=>{if(DEMO){store.set("people",people);store.set("config",conf
 /* ---------- Gemeinsamer Speicher (Firebase) ---------- */
 const R={on:false};
 let code=store.get("code",null); // Gruppencode: die Daten liegen unter groups/<code>/…
+/* Einladungslink: …/bibelstudium/?g=<code> setzt die Gruppe automatisch */
+const standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const invite=(new URLSearchParams(location.search).get("g")||"").trim().toLowerCase().replace(/[\/.#$\[\]\s]/g,"");
+let fromInvite=false;
+if(invite&&!DEMO&&(!code||(!standalone&&invite!==code))){
+  if(invite!==code){me=null;store.set("me",null)}
+  code=invite;store.set("code",code);fromInvite=true;
+}
+const inviteUrl=()=>location.origin+location.pathname+"?g="+encodeURIComponent(code);
+const leaveGroup=()=>{store.set("code",null);store.set("me",null);location.href=location.pathname};
 const P=(...parts)=>["groups",code,...parts];
 async function connect(){
   if(R.F)return;
@@ -273,7 +283,10 @@ async function initFirebase(){
   $("demoNote").textContent="Verbinde …";
   try{
     await connect();
-    const {F,db}=R;R.on=true;
+    const {F,db}=R;
+    if(fromInvite&&!(await F.getDoc(F.doc(db,"groups",code,"meta","info"))).exists()){
+      code=null;store.set("code",null);$("demoNote").textContent="";document.querySelector(".sheet-bg")?.remove();askCode("Dieser Einladungslink stimmt nicht. Frag in der WhatsApp-Gruppe nach dem richtigen.");return}
+    R.on=true;
     F.onSnapshot(F.collection(db,...P("meetings")),q=>{meets={};q.docs.forEach(d=>{const v=d.data();meets[d.id]={cook:v.cook||null,status:v.status||{}}});render()});
     F.onSnapshot(F.doc(db,...P("meta","config")),d=>{config={...DEFAULT_CONFIG,...(d.data()||{})};render();refreshSheet("settings",fillSettings)});
     F.onSnapshot(F.doc(db,...P("meta","people")),d=>{people=(d.data()||{}).list||[];render();refreshSheet("pick",fillPick)});
@@ -286,22 +299,20 @@ async function initFirebase(){
   }catch(e){console.warn("Firebase nicht erreichbar",e);$("demoNote").textContent="Keine Verbindung · Einträge werden gerade nicht geteilt"}
 }
 /* Gruppencode beim ersten Öffnen */
-function askCode(){
+function askCode(msg){
   const bg=document.createElement("div");bg.className="sheet-bg";
-  bg.innerHTML=`<form class="sheet add" id="codeForm" aria-label="Gruppencode"><h2>Gruppencode</h2><p id="codeMsg">Den Code findest du in der WhatsApp-Gruppe.</p>
+  bg.innerHTML=`<form class="sheet add" id="codeForm" aria-label="Gruppencode"><h2>Willkommen</h2><p id="codeMsg">${esc(msg||"Öffne den Einladungslink aus der WhatsApp-Gruppe. Oder gib hier den Gruppencode ein.")}</p>
     <div class="group"><input id="codeIn" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Code eingeben"></div>
-    <button class="btn on" id="codeBtn">Weiter</button><button type="button" class="btn" id="codeNew" hidden>Neue Gruppe mit diesem Code anlegen</button></form>`;
+    <button class="btn on" id="codeBtn">Weiter</button></form>`;
   document.body.appendChild(bg);
   const norm=()=>$("codeIn").value.trim().toLowerCase().replace(/\s+/g,"-").replace(/[\/.#$\[\]]/g,"");
   const done=c=>{code=c;store.set("code",c);bg.remove();initFirebase()};
-  $("codeIn").oninput=()=>{$("codeNew").hidden=true;$("codeMsg").textContent="Den Code findest du in der WhatsApp-Gruppe."};
   $("codeForm").onsubmit=async e=>{e.preventDefault();const c=norm();if(c.length<4){$("codeMsg").textContent="Der Code ist zu kurz.";return}
     $("codeBtn").disabled=true;$("codeMsg").textContent="Prüfe …";
     try{await connect();const snap=await R.F.getDoc(R.F.doc(R.db,"groups",c,"meta","info"));
-      if(snap.exists())done(c);else{$("codeMsg").textContent="Diesen Code gibt es noch nicht. Prüfe die Schreibweise.";$("codeNew").hidden=false}
+      if(snap.exists())done(c);else $("codeMsg").textContent="Diesen Code gibt es nicht. Prüfe die Schreibweise."
     }catch(err){console.warn(err);$("codeMsg").textContent="Keine Verbindung. Bitte später nochmal versuchen."}
     $("codeBtn").disabled=false};
-  $("codeNew").onclick=async()=>{const c=norm();try{await connect();await R.F.setDoc(R.F.doc(R.db,"groups",c,"meta","info"),{created:Date.now()});done(c)}catch(err){console.warn(err);$("codeMsg").textContent="Anlegen hat nicht geklappt."}};
 }
 const remote=fn=>{if(R.on)fn(R.F,R.db).catch(e=>console.warn(e))};
 
@@ -516,7 +527,8 @@ function settings(){
       <form class="add" id="fWish"><div class="group"><textarea id="wText" maxlength="500" placeholder="Was soll die App noch können? Z. B. eine Seite, auf der wir teilen, was wir in der Bibel gelesen haben."></textarea></div>
       <button class="btn on" id="bWish" disabled>Wunsch senden</button></form>
       <div class="group" id="wishList" style="margin-top:10px"></div></div>
-    ${DEMO?"":`<p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="sSwitch">Gruppe wechseln</button></p>`}`,"tall");
+    ${DEMO?"":`<div><p class="label">Gruppe</p><button type="button" class="btn on" id="sInvite" style="width:100%">Einladungslink teilen</button>
+      <p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="sSwitch">Gruppe wechseln</button></p></div>`}`,"tall");
   if(!bg)return;
   fillSettings();fillWishes();
   $("sDone").onclick=()=>bg.remove();
@@ -527,7 +539,11 @@ function settings(){
   $("fWish").onsubmit=e=>{e.preventDefault();const v=$("wText").value.trim();if(!v||!needMe())return;ops.addWish(v);saveLocal();$("wText").value="";$("bWish").disabled=true;fillWishes()};
   $("nRemind").onchange=()=>setNotif({remind:$("nRemind").value});
   $("nPrayer").onchange=()=>setNotif({prayers:$("nPrayer").checked});
-  if($("sSwitch"))$("sSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
+  if($("sSwitch"))$("sSwitch").onclick=leaveGroup;
+  if($("sInvite"))$("sInvite").onclick=async()=>{
+    const url=inviteUrl(),text="Hier ist unsere Bibelstudium-App. Einfach antippen, dann bist du direkt in unserer Gruppe:";
+    if(navigator.share){try{await navigator.share({title:"Bibelstudium Bern",text,url})}catch(e){}return}
+    location.href="https://wa.me/?text="+encodeURIComponent(text+" "+url)};
 }
 /* ---------- Benachrichtigungen ---------- */
 let notif=store.get("notif",{remind:"off",prayers:false});
@@ -594,7 +610,7 @@ function pick(){
   $("fPerson").onsubmit=e=>{e.preventDefault();const n=$("newName").value.trim().replace(/\s+/g," ");if(!n)return;
     if(!ops.addPerson(n)){$("newName").value="";$("newName").placeholder="Den Namen gibt es schon";return}
     saveLocal();me=n;store.set("me",me);syncName();render();bg.remove()};
-  if($("bSwitch"))$("bSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
+  if($("bSwitch"))$("bSwitch").onclick=leaveGroup;
   bg.addEventListener("click",e=>{
     const x=e.target.closest("[data-delp]");
     if(x){if(armDel(x)){ops.removePerson(x.dataset.delp);saveLocal();render();fillPick()}return}

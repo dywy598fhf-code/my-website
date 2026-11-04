@@ -2,7 +2,6 @@
   "name": "Bibelstudium Bern",
   "short_name": "Bibelabend",
   "lang": "de",
-  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f2f1ee",
