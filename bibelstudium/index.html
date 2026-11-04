@@ -127,6 +127,11 @@ textarea.note-in::placeholder,.add textarea::placeholder{color:var(--muted)}
 .row .name.link{cursor:pointer}
 .ntag{font-size:12px;color:var(--muted);margin-left:6px}
 .sheet .label{margin-top:4px}
+.arch-head{width:100%;text-align:left;background:none;border:0;cursor:pointer}
+.arch-head .chev{color:var(--muted);font-size:20px;transition:transform .25s var(--ease)}
+.arch-head[aria-expanded="true"] .chev{transform:rotate(90deg)}
+#archive .row{border-top:1px solid var(--line)}
+#archive .name{color:var(--muted)}
 .field input.switch{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:16px;background:var(--line);position:relative;transition:background .2s;flex:none;padding:0;margin:0;cursor:pointer}
 .field input.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s var(--ease)}
 .field input.switch:checked{background:var(--ok)}
@@ -181,6 +186,10 @@ textarea.note-in::placeholder,.add textarea::placeholder{color:var(--muted)}
     <section>
       <p class="label">Wünsche</p>
       <div class="group" id="topics"></div>
+    </section>
+    <section id="archSec" hidden>
+      <div class="group"><button class="row arch-head" id="archToggle" aria-expanded="false"><span class="name">🗂 Archiv <span class="tag" id="archCount"></span></span><span class="chev" aria-hidden="true">›</span></button>
+        <div id="archive" hidden></div></div>
     </section>
   </div>
 
@@ -365,6 +374,8 @@ const ops={
     remote((F,db)=>F.setDoc(F.doc(db,...P("meta","people")),{list:F.arrayRemove(o)},{merge:true}))},
   addTopic(text){const t={id:uid(),text,by:me,votes:[],t:Date.now()};topics.push(t);
     remote((F,db)=>F.setDoc(F.doc(db,...P("topics",t.id)),{text,by:me,votes:[],t:t.t}))},
+  setDiscussed(id,on){const t=topics.find(t=>t.id===id);if(!t)return;t.discussed=on?Date.now():null;
+    remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),{discussed:t.discussed}))},
   editTopic(id,fields){const t=topics.find(t=>t.id===id);if(!t||t.by!==me)return;Object.assign(t,fields);
     remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),fields))},
   vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
@@ -427,16 +438,23 @@ function renderTreffen(){
   $("bCook").classList.toggle("on",c.cook===me);
   $("bCook").textContent=c.cook===me?"Ich koche nicht mehr":"Ich koche";
 }
+let archOpen=store.get("archOpen",false);
+const fmtDay=ms=>new Date(ms).toLocaleDateString("de-DE",{day:"numeric",month:"short",year:"numeric"});
 function renderThemen(){
-  const list=[...topics].sort((a,b)=>b.votes.length-a.votes.length||(a.t||0)-(b.t||0));
+  const done=topics.filter(t=>t.discussed).sort((a,b)=>b.discussed-a.discussed);
+  $("archSec").hidden=!done.length;$("archCount").textContent=done.length;
+  $("archToggle").setAttribute("aria-expanded",archOpen);$("archive").hidden=!archOpen;
+  $("archive").innerHTML=done.map(t=>`<div class="row">${dot(t.by)}<span class="name link" data-topic="${t.id}">${esc(t.text)}${t.notes?'<span class="ntag">· Notiz</span>':""}<span class="sub">besprochen am ${fmtDay(t.discussed)}</span></span></div>`).join("");
+  const list=topics.filter(t=>!t.discussed).sort((a,b)=>b.votes.length-a.votes.length||(a.t||0)-(b.t||0));
   $("topics").innerHTML=list.map(t=>{
     const mine=t.votes.includes(me);
     return `<div class="row">${dot(t.by)}
       <span class="name link" data-topic="${t.id}">${esc(t.text)}${t.notes?'<span class="ntag">· Notiz</span>':""}
         <span class="voters">${t.votes.map(v=>dot(v,"sm")).join("")}</span></span>
       <button class="pill ${mine?"on":""}" data-vote="${t.id}" aria-pressed="${mine}" aria-label="Interessiert mich auch"><span aria-hidden="true">🙋</span> ${t.votes.length}</button>
-    </div>`}).join("")||`<div class="empty">Noch keine Themen</div>`;
+    </div>`}).join("")||`<div class="empty">${done.length?"Alle Themen sind besprochen":"Noch keine Themen"}</div>`;
 }
+$("archToggle").onclick=()=>{archOpen=!archOpen;store.set("archOpen",archOpen);renderThemen()};
 function renderGebet(){
   const by=[...new Set(prayers.map(p=>p.by))].sort((a,b)=>(b===me)-(a===me));
   $("prayers").innerHTML=by.map(a=>`<div class="group">
@@ -497,7 +515,11 @@ function fillTopic(){
     ${mine?`<input class="title-in" id="tTitle" maxlength="120" value="${esc(t.text)}" aria-label="Titel">`:`<h2 style="font-size:24px">${esc(t.text)}</h2>`}
     <div class="group">${mine?`<textarea class="note-in" id="tNotes" placeholder="Beschreibe deine Idee genauer: Bibelstellen, Fragen, Gedanken …">${esc(t.notes||"")}</textarea>`
       :`<div style="padding:14px 16px;white-space:pre-wrap;min-height:80px">${t.notes?esc(t.notes):'<span style="color:var(--muted)">Noch keine Notiz.</span>'}</div>`}</div>
-    ${mine?`<p class="note" id="tSaved">Wird automatisch gespeichert.</p><button class="del" data-del="${t.id}" data-kind="topic" style="align-self:center">Thema löschen</button>`:""}`;
+    ${mine?`<p class="note" id="tSaved">Wird automatisch gespeichert.</p>`:""}
+    <button class="btn ${t.discussed?"":"on"}" id="tArch">${t.discussed?"Wieder offen":"Als besprochen markieren"}</button>
+    ${t.discussed?`<p class="note">Besprochen am ${fmtDay(t.discussed)} · liegt im Archiv</p>`:""}
+    ${mine?`<button class="del" data-del="${t.id}" data-kind="topic" style="align-self:center">Thema löschen</button>`:""}`;
+  $("tArch").onclick=()=>{if(!needMe())return;const on=!t.discussed;ops.setDiscussed(t.id,on);saveLocal();renderThemen();if(on)document.querySelector(".sheet-bg")?.remove();else fillTopic()};
   $("tDone").onclick=()=>document.querySelector(".sheet-bg")?.remove();
   if(mine){
     const save=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>{const v=$("tTitle").value.trim();ops.editTopic(t.id,{text:v||t.text,notes:$("tNotes").value});saveLocal();renderThemen();$("tSaved").textContent="Gespeichert"},500)};
