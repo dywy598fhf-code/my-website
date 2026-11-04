@@ -94,8 +94,8 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 .sheet{background:var(--bg);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:16px 16px 0 0;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));animation:up .35s var(--ease);display:flex;flex-direction:column;gap:14px}
 .sheet h2{margin:0;font-size:20px}
 .sheet p{margin:0;color:var(--muted)}
-.row.pick{width:100%;text-align:left}
-.row.pick:active{background:var(--soft)}
+.pickname{text-align:left;font-size:16px;padding:6px 0}
+.pickname:active{opacity:.6}
 @keyframes up{from{transform:translateY(100%)}}
 @keyframes fade{from{opacity:0}}
 .view{display:flex;flex-direction:column;gap:28px;animation:pop .3s var(--ease)}
@@ -168,8 +168,9 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 </nav>
 
 <script>
-/* ---------- Personen und Farben (Beispielnamen, später ersetzen) ---------- */
-const PEOPLE=[
+/* ---------- Personen und Farben (Beispielnamen nur für die Testversion) ---------- */
+const PALETTE=["#2f6fdb","#d9485f","#2e9e6a","#c27c0e","#7b4fd6","#d0557f","#1597a6","#8a6a4f","#5a6b7d","#a3456b","#4f7a28","#c4501f"];
+const DEMO_PEOPLE=[
   {n:"Kevin",c:"#2f6fdb"},{n:"Anna",c:"#d9485f"},{n:"Jonas",c:"#2e9e6a"},
   {n:"Lea",c:"#c27c0e"},{n:"Micha",c:"#7b4fd6"},{n:"Sarah",c:"#d0557f"},
   {n:"Tim",c:"#1597a6"},{n:"Ruth",c:"#8a6a4f"},{n:"David",c:"#5a6b7d"},{n:"Esther",c:"#a3456b"}
@@ -196,6 +197,7 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let me=store.get("me",null);
 // Beispieldaten nur für die Testversion ohne Firebase
 const DEMO=!FIREBASE_CONFIG;
+let people=DEMO?store.get("people",DEMO_PEOPLE):[];
 let meet=DEMO?store.get("meet2",{cook:"Anna",status:{Anna:"yes",Jonas:"yes",Lea:"yes",Tim:"yes",Micha:"no"}}):{cook:null,status:{}};
 let topics=DEMO?store.get("topics",[
   {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"],t:2},
@@ -206,7 +208,7 @@ let prayers=DEMO?store.get("prayers",[
   {id:"p3",name:"Sophie",text:"Prüfungen im Studium",by:"Tim",done:false,t:2},
   {id:"p2",name:"Julia",text:"Gesundheit nach der OP",by:"Anna",done:true,t:1}
 ]):[];
-const saveLocal=()=>{if(DEMO){store.set("meet2",meet);store.set("topics",topics);store.set("prayers",prayers)}};
+const saveLocal=()=>{if(DEMO){store.set("people",people);store.set("meet2",meet);store.set("topics",topics);store.set("prayers",prayers)}};
 
 /* ---------- Gemeinsamer Speicher (Firebase) ---------- */
 const R={on:false};
@@ -228,6 +230,7 @@ async function initFirebase(){
     const {F,db}=R;
     Object.assign(R,{on:true,meetRef:F.doc(db,...P("meetings",meetingKey()))});
     F.onSnapshot(R.meetRef,d=>{const v=d.data()||{};meet={cook:v.cook||null,status:v.status||{}};render()});
+    F.onSnapshot(F.doc(db,...P("meta","people")),d=>{people=(d.data()||{}).list||[];render();const s=document.querySelector(".sheet-bg");if(s&&s.dataset.kind==="pick")fillPick()});
     F.onSnapshot(F.collection(db,...P("topics")),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render()});
     F.onSnapshot(F.collection(db,...P("prayers")),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
     $("demoNote").hidden=true;
@@ -265,6 +268,12 @@ const ops={
     meet.cook=on?me:null; if(on)meet.status[me]="yes";
     remote(F=>F.setDoc(R.meetRef,{cook:meet.cook,...(on?{status:{[me]:"yes"}}:{})},{merge:true}));
   },
+  addPerson(n){if(people.some(p=>p.n.toLowerCase()===n.toLowerCase()))return false;
+    const used=people.map(p=>p.c),c=PALETTE.find(x=>!used.includes(x))||PALETTE[people.length%PALETTE.length],o={n,c};
+    people=[...people,o];remote((F,db)=>F.setDoc(F.doc(db,...P("meta","people")),{list:F.arrayUnion(o)},{merge:true}));return true},
+  removePerson(n){const o=people.find(p=>p.n===n);if(!o)return;people=people.filter(p=>p!==o);
+    if(me===n){me=null;store.set("me",null)}
+    remote((F,db)=>F.setDoc(F.doc(db,...P("meta","people")),{list:F.arrayRemove(o)},{merge:true}))},
   addTopic(text){const t={id:uid(),text,by:me,votes:[],t:Date.now()};topics.push(t);
     remote((F,db)=>F.setDoc(F.doc(db,...P("topics",t.id)),{text,by:me,votes:[],t:t.t}))},
   vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
@@ -282,7 +291,7 @@ const ops={
 /* ---------- Helfer ---------- */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const color=n=>(PEOPLE.find(p=>p.n===n)||{}).c||"#888";
+const color=n=>(people.find(p=>p.n===n)||{}).c||"#8e8e93";
 const dot=(n,cls="")=>`<span class="dot ${cls}" style="background:${color(n)}" title="${esc(n)}">${esc(n[0])}</span>`;
 function meetingDate(){
   const d=new Date();d.setHours(0,0,0,0);
@@ -291,7 +300,7 @@ function meetingDate(){
 }
 const nextMeeting=()=>meetingDate().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
 const meetingKey=()=>{const d=meetingDate();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
-const order=n=>{const i=PEOPLE.findIndex(p=>p.n===n);return i<0?99:i};
+const order=n=>{const i=people.findIndex(p=>p.n===n);return i<0?99:i};
 function needMe(){if(!me){pick();return false}return true}
 const delBtn=(id,kind)=>`<button class="del" data-del="${id}" data-kind="${kind}">Löschen</button>`;
 
@@ -368,11 +377,31 @@ document.addEventListener("click",e=>{
 $("me").onclick=pick;
 function pick(){
   if(document.querySelector(".sheet-bg"))return;
-  const bg=document.createElement("div");bg.className="sheet-bg";
+  const bg=document.createElement("div");bg.className="sheet-bg";bg.dataset.kind="pick";
   bg.innerHTML=`<div class="sheet" role="dialog" aria-label="Wer bist du?"><h2>Wer bist du?</h2><p>Einmal antippen. Dein Handy merkt es sich.</p>
-  <div class="group">${PEOPLE.map(p=>`<button class="row pick" data-n="${esc(p.n)}">${dot(p.n)}<span class="name">${esc(p.n)}</span></button>`).join("")}</div></div>`;
-  bg.onclick=e=>{const b=e.target.closest("[data-n]");if(b){me=b.dataset.n;store.set("me",me);render()}if(b||e.target===bg)bg.remove()};
-  document.body.appendChild(bg);
+  <div class="group" id="pickList"></div>
+  <form class="add" id="fPerson"><div class="group"><input id="newName" maxlength="20" placeholder="Neuer Name" autocomplete="off"></div>
+  <button class="btn on" id="bPerson" disabled>Name hinzufügen</button></form>
+  ${DEMO?"":`<p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="bSwitch">Gruppe wechseln</button></p>`}</div>`;
+  document.body.appendChild(bg);fillPick();
+  $("newName").oninput=()=>$("bPerson").disabled=!$("newName").value.trim();
+  $("fPerson").onsubmit=e=>{e.preventDefault();const n=$("newName").value.trim().replace(/\s+/g," ");if(!n)return;
+    if(!ops.addPerson(n)){$("newName").value="";$("newName").placeholder="Den Namen gibt es schon";return}
+    saveLocal();me=n;store.set("me",me);render();bg.remove()};
+  if($("bSwitch"))$("bSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
+  bg.onclick=e=>{
+    const x=e.target.closest("[data-delp]");
+    if(x){if(!x.classList.contains("arm")){x.classList.add("arm");x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent="Löschen"}},3000);return}
+      ops.removePerson(x.dataset.delp);saveLocal();render();fillPick();return}
+    const b=e.target.closest("[data-n]");
+    if(b){me=b.dataset.n;store.set("me",me);render();bg.remove();return}
+    if(e.target===bg&&me)bg.remove();
+  };
+}
+function fillPick(){
+  const l=$("pickList");if(!l)return;
+  l.innerHTML=people.map(p=>`<div class="row">${dot(p.n)}<button class="name pickname" data-n="${esc(p.n)}">${esc(p.n)}${p.n===me?" (du)":""}</button><button class="del" data-delp="${esc(p.n)}">Löschen</button></div>`).join("")
+    ||`<div class="empty">Noch keine Namen. Schreib unten deinen Namen.</div>`;
 }
 
 /* ---------- Seiten wechseln ---------- */
