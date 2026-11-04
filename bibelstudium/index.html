@@ -177,7 +177,14 @@ const PEOPLE=[
 const MEETING_WEEKDAY=4; // 0 = Sonntag … 4 = Donnerstag
 
 /* ---------- Firebase: hier den firebaseConfig-Block einsetzen. Leer = nur auf diesem Handy. ---------- */
-const FIREBASE_CONFIG=null;
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyD3ju2NJdXk5gtu3YLDIkFpdhsjnXVXoJc",
+  authDomain:"bibestudium-webapp.firebaseapp.com",
+  projectId:"bibestudium-webapp",
+  storageBucket:"bibestudium-webapp.firebasestorage.app",
+  messagingSenderId:"94060783002",
+  appId:"1:94060783002:web:c145f9913bbd8b436b4623"
+};
 const FB="https://www.gstatic.com/firebasejs/11.0.2/";
 
 /* ---------- Speicher auf dem Handy ---------- */
@@ -205,6 +212,7 @@ const saveLocal=()=>{if(DEMO){store.set("meet2",meet);store.set("topics",topics)
 const R={on:false};
 async function initFirebase(){
   if(!FIREBASE_CONFIG)return;
+  $("demoNote").textContent="Verbinde …";
   try{
     const [A,Au,F]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-auth.js"),import(FB+"firebase-firestore.js")]);
     const app=A.initializeApp(FIREBASE_CONFIG);
