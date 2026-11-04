@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bibelabend</title>
+<title>Bibelstudium Bern</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <!--pwa-->
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Bibelabend">
+<meta name="apple-mobile-web-app-title" content="Bibelstudium">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f2f1ee" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0f0f10" media="(prefers-color-scheme: dark)">
@@ -37,7 +37,7 @@
 html,body{min-height:100%}
 body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.4 var(--font);-webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
-button,input,textarea{font:inherit;color:inherit}
+button,input,textarea,select{font:inherit;color:inherit}
 button{border:0;background:none;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation;padding:0}
 button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 [hidden]{display:none!important}
@@ -96,6 +96,30 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 .sheet p{margin:0;color:var(--muted)}
 .pickname{text-align:left;font-size:16px;padding:6px 0}
 .pickname:active{opacity:.6}
+.hright{display:flex;align-items:center;gap:8px;flex:none}
+.gear{width:40px;height:40px;border-radius:50%;background:var(--card);display:grid;place-items:center;color:var(--fg)}
+.gear svg{width:22px;height:22px}
+.chips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px 2px;-webkit-overflow-scrolling:touch}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:36px;padding:0 14px;border-radius:999px;background:var(--card);font-size:14px;font-weight:600;white-space:nowrap}
+.chip.on{background:var(--btn);color:var(--btn-fg)}
+.chip.add{background:transparent;border:1.5px dashed var(--line);color:var(--muted)}
+.date .lbl{display:block;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px}
+.date{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--soft);border-radius:10px;padding:3px;gap:3px}
+.seg button{height:34px;border-radius:8px;font-size:14px;font-weight:600;color:var(--muted)}
+.seg button.on{background:var(--card);color:var(--fg);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 16px;min-height:52px}
+.field+.field{border-top:1px solid var(--line)}
+.field select,.field input{border:0;background:var(--soft);border-radius:8px;padding:8px 10px;font-size:16px;color:var(--fg);min-width:0}
+textarea.note-in{width:100%;border:0;background:transparent;padding:14px 16px;font-size:16px;line-height:1.5;min-height:160px;resize:vertical;display:block}
+textarea.note-in::placeholder,.add textarea::placeholder{color:var(--muted)}
+.add textarea{width:100%;border:0;background:transparent;padding:14px 16px;font-size:16px;min-height:80px;resize:vertical;display:block}
+.title-in{width:100%;border:0;background:transparent;font-size:24px;font-weight:700;letter-spacing:-.01em;padding:0}
+.sheet.tall{min-height:80%}
+.row .name.link{cursor:pointer}
+.ntag{font-size:12px;color:var(--muted);margin-left:6px}
+.sheet .label{margin-top:4px}
 @keyframes up{from{transform:translateY(100%)}}
 @keyframes fade{from{opacity:0}}
 .view{display:flex;flex-direction:column;gap:28px;animation:pop .3s var(--ease)}
@@ -106,15 +130,18 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 <body>
 <div class="wrap">
   <header>
-    <h1 id="title">Bibelabend</h1>
-    <button class="me" id="me" aria-label="Person wechseln"></button>
+    <h1 id="title">Bibelstudium</h1>
+    <div class="hright">
+      <button class="gear" id="gear" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button class="me" id="me" aria-label="Person wechseln"></button>
+    </div>
   </header>
 
   <!-- Treffen -->
   <div class="view" id="v-treffen">
+    <div class="chips" id="chips" role="tablist" aria-label="Treffen auswählen"></div>
     <section>
-      <p class="label">Nächstes Treffen</p>
-      <div class="group date"><b id="when"></b><span>19:30 Uhr</span></div>
+      <div class="group date"><div><span class="lbl" id="whenLbl">Nächstes Treffen</span><b id="when"></b><span id="whenTime"></span></div><span id="whenDel"></span></div>
     </section>
     <section>
       <p class="label">Es kocht</p>
@@ -168,6 +195,7 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
 </nav>
 
 <script>
+
 /* ---------- Personen und Farben (Beispielnamen nur für die Testversion) ---------- */
 const PALETTE=["#2f6fdb","#d9485f","#2e9e6a","#c27c0e","#7b4fd6","#d0557f","#1597a6","#8a6a4f","#5a6b7d","#a3456b","#4f7a28","#c4501f"];
 const DEMO_PEOPLE=[
@@ -175,7 +203,8 @@ const DEMO_PEOPLE=[
   {n:"Lea",c:"#c27c0e"},{n:"Micha",c:"#7b4fd6"},{n:"Sarah",c:"#d0557f"},
   {n:"Tim",c:"#1597a6"},{n:"Ruth",c:"#8a6a4f"},{n:"David",c:"#5a6b7d"},{n:"Esther",c:"#a3456b"}
 ];
-const MEETING_WEEKDAY=4; // 0 = Sonntag … 4 = Donnerstag
+const DEFAULT_CONFIG={weekday:4,time:"19:30",extras:[]}; // 0 = Sonntag … 4 = Donnerstag
+const WEEKDAYS=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 /* ---------- Firebase: hier den firebaseConfig-Block einsetzen. Leer = nur auf diesem Handy. ---------- */
 const FIREBASE_CONFIG={
@@ -195,12 +224,19 @@ const store={
 };
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let me=store.get("me",null);
+
+/* ---------- Darstellung (Hell/Dunkel) ---------- */
+let theme=store.get("theme","system");
+const applyTheme=()=>{if(theme==="system")delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=theme};
+applyTheme();
+
 // Beispieldaten nur für die Testversion ohne Firebase
 const DEMO=!FIREBASE_CONFIG;
 let people=DEMO?store.get("people",DEMO_PEOPLE):[];
-let meet=DEMO?store.get("meet2",{cook:"Anna",status:{Anna:"yes",Jonas:"yes",Lea:"yes",Tim:"yes",Micha:"no"}}):{cook:null,status:{}};
+let config=DEMO?store.get("config",DEFAULT_CONFIG):{...DEFAULT_CONFIG};
+let meets=DEMO?store.get("meets",{}):{}; // Schlüssel = Treffen, Wert = {cook,status}
 let topics=DEMO?store.get("topics",[
-  {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"],t:2},
+  {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"],t:2,notes:"Ich merke oft, dass ich beim Beten nicht weiß, was ich sagen soll. Vielleicht können wir die Psalmen als Gebete anschauen?"},
   {id:"t2",text:"Das Buch Jona",by:"Jonas",votes:["Anna"],t:1}
 ]):[];
 let prayers=DEMO?store.get("prayers",[
@@ -208,7 +244,8 @@ let prayers=DEMO?store.get("prayers",[
   {id:"p3",name:"Sophie",text:"Prüfungen im Studium",by:"Tim",done:false,t:2},
   {id:"p2",name:"Julia",text:"Gesundheit nach der OP",by:"Anna",done:true,t:1}
 ]):[];
-const saveLocal=()=>{if(DEMO){store.set("people",people);store.set("meet2",meet);store.set("topics",topics);store.set("prayers",prayers)}};
+let wishes=DEMO?store.get("wishes",[]):[];
+const saveLocal=()=>{if(DEMO){store.set("people",people);store.set("config",config);store.set("meets",meets);store.set("topics",topics);store.set("prayers",prayers);store.set("wishes",wishes)}};
 
 /* ---------- Gemeinsamer Speicher (Firebase) ---------- */
 const R={on:false};
@@ -221,18 +258,20 @@ async function connect(){
   await Au.signInAnonymously(Au.getAuth(app));
   Object.assign(R,{F,db:F.getFirestore(app)});
 }
+function refreshSheet(kind,fn){const s=document.querySelector(".sheet-bg");if(s&&s.dataset.kind===kind)fn()}
 async function initFirebase(){
   if(!FIREBASE_CONFIG)return;
   if(!code){askCode();return}
   $("demoNote").textContent="Verbinde …";
   try{
     await connect();
-    const {F,db}=R;
-    Object.assign(R,{on:true,meetRef:F.doc(db,...P("meetings",meetingKey()))});
-    F.onSnapshot(R.meetRef,d=>{const v=d.data()||{};meet={cook:v.cook||null,status:v.status||{}};render()});
-    F.onSnapshot(F.doc(db,...P("meta","people")),d=>{people=(d.data()||{}).list||[];render();const s=document.querySelector(".sheet-bg");if(s&&s.dataset.kind==="pick")fillPick()});
-    F.onSnapshot(F.collection(db,...P("topics")),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render()});
+    const {F,db}=R;R.on=true;
+    F.onSnapshot(F.collection(db,...P("meetings")),q=>{meets={};q.docs.forEach(d=>{const v=d.data();meets[d.id]={cook:v.cook||null,status:v.status||{}}});render()});
+    F.onSnapshot(F.doc(db,...P("meta","config")),d=>{config={...DEFAULT_CONFIG,...(d.data()||{})};render();refreshSheet("settings",fillSettings)});
+    F.onSnapshot(F.doc(db,...P("meta","people")),d=>{people=(d.data()||{}).list||[];render();refreshSheet("pick",fillPick)});
+    F.onSnapshot(F.collection(db,...P("topics")),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render();refreshSheet("topic",fillTopic)});
     F.onSnapshot(F.collection(db,...P("prayers")),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
+    F.onSnapshot(F.collection(db,...P("wishes")),q=>{wishes=q.docs.map(d=>({id:d.id,...d.data()}));refreshSheet("settings",fillWishes)});
     $("demoNote").hidden=true;
     if(!me)pick();
   }catch(e){console.warn("Firebase nicht erreichbar",e);$("demoNote").textContent="Keine Verbindung · Einträge werden gerade nicht geteilt"}
@@ -257,17 +296,40 @@ function askCode(){
 }
 const remote=fn=>{if(R.on)fn(R.F,R.db).catch(e=>console.warn(e))};
 
+/* ---------- Treffen: wöchentlich plus weitere Termine ---------- */
+const pad=n=>String(n).padStart(2,"0");
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYmd=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+function upcoming(){
+  const today=new Date();today.setHours(0,0,0,0);
+  const w=new Date(today);w.setDate(w.getDate()+((config.weekday-w.getDay()+7)%7));
+  const list=[{key:ymd(w),date:w,time:config.time,label:"",weekly:true}];
+  (config.extras||[]).forEach(x=>{const d=parseYmd(x.date);if(d>=today)list.push({key:"x-"+x.id,date:d,time:x.time,label:x.label||"",by:x.by,x})});
+  return list.sort((a,b)=>a.date-b.date||String(a.time).localeCompare(String(b.time)));
+}
+let sel=null;
+const curMeeting=()=>{const u=upcoming();return u.find(m=>m.key===sel)||(sel&&!sel.startsWith("x-")&&u.find(m=>m.weekly))||u[0]};
+const cur=()=>{const k=curMeeting().key;return meets[k]||(meets[k]={cook:null,status:{}})};
+const meetRef=()=>R.F.doc(R.db,...P("meetings",curMeeting().key));
+
 /* Alle Änderungen laufen über diese Funktionen */
 const ops={
   setStatus(st){ // "yes" | "no" | null
-    if(st)meet.status[me]=st;else delete meet.status[me];
-    const cookOff=meet.cook===me&&st!=="yes"; if(cookOff)meet.cook=null;
-    remote(F=>F.setDoc(R.meetRef,{status:{[me]:st||F.deleteField()},...(cookOff?{cook:null}:{})},{merge:true}));
+    const m=cur();
+    if(st)m.status[me]=st;else delete m.status[me];
+    const cookOff=m.cook===me&&st!=="yes"; if(cookOff)m.cook=null;
+    remote(F=>F.setDoc(meetRef(),{status:{[me]:st||F.deleteField()},...(cookOff?{cook:null}:{})},{merge:true}));
   },
   setCook(on){
-    meet.cook=on?me:null; if(on)meet.status[me]="yes";
-    remote(F=>F.setDoc(R.meetRef,{cook:meet.cook,...(on?{status:{[me]:"yes"}}:{})},{merge:true}));
+    const m=cur();m.cook=on?me:null; if(on)m.status[me]="yes";
+    remote(F=>F.setDoc(meetRef(),{cook:m.cook,...(on?{status:{[me]:"yes"}}:{})},{merge:true}));
   },
+  setWeekly(weekday,time){config={...config,weekday,time};
+    remote((F,db)=>F.setDoc(F.doc(db,...P("meta","config")),{weekday,time},{merge:true}))},
+  addExtra(date,time,label){const x={id:uid(),date,time,label,by:me};config={...config,extras:[...(config.extras||[]),x]};sel="x-"+x.id;
+    remote((F,db)=>F.setDoc(F.doc(db,...P("meta","config")),{extras:F.arrayUnion(x)},{merge:true}))},
+  removeExtra(id){const x=(config.extras||[]).find(e=>e.id===id);if(!x)return;config={...config,extras:config.extras.filter(e=>e!==x)};sel=null;
+    remote((F,db)=>F.setDoc(F.doc(db,...P("meta","config")),{extras:F.arrayRemove(x)},{merge:true}))},
   addPerson(n){if(people.some(p=>p.n.toLowerCase()===n.toLowerCase()))return false;
     const used=people.map(p=>p.c),c=PALETTE.find(x=>!used.includes(x))||PALETTE[people.length%PALETTE.length],o={n,c};
     people=[...people,o];remote((F,db)=>F.setDoc(F.doc(db,...P("meta","people")),{list:F.arrayUnion(o)},{merge:true}));return true},
@@ -276,6 +338,8 @@ const ops={
     remote((F,db)=>F.setDoc(F.doc(db,...P("meta","people")),{list:F.arrayRemove(o)},{merge:true}))},
   addTopic(text){const t={id:uid(),text,by:me,votes:[],t:Date.now()};topics.push(t);
     remote((F,db)=>F.setDoc(F.doc(db,...P("topics",t.id)),{text,by:me,votes:[],t:t.t}))},
+  editTopic(id,fields){const t=topics.find(t=>t.id===id);if(!t||t.by!==me)return;Object.assign(t,fields);
+    remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),fields))},
   vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
     t.votes=on?[...t.votes,me]:t.votes.filter(n=>n!==me);
     remote((F,db)=>F.updateDoc(F.doc(db,...P("topics",id)),{votes:on?F.arrayUnion(me):F.arrayRemove(me)}))},
@@ -283,55 +347,66 @@ const ops={
     remote((F,db)=>F.setDoc(F.doc(db,...P("prayers",p.id)),{name,text,by:me,done:false,t:p.t}))},
   toggleDone(id){const p=prayers.find(p=>p.id===id);if(!p||p.by!==me)return;p.done=!p.done;
     remote((F,db)=>F.updateDoc(F.doc(db,...P("prayers",id)),{done:p.done}))},
-  remove(kind,id){const list=kind==="topic"?topics:prayers,x=list.find(i=>i.id===id);if(!x||x.by!==me)return;
-    if(kind==="topic")topics=topics.filter(i=>i.id!==id);else prayers=prayers.filter(i=>i.id!==id);
-    remote((F,db)=>F.deleteDoc(F.doc(db,...P(kind==="topic"?"topics":"prayers",id))))}
+  addWish(text){const w={id:uid(),text,by:me,t:Date.now()};wishes.push(w);
+    remote((F,db)=>F.setDoc(F.doc(db,...P("wishes",w.id)),{text,by:me,t:w.t}))},
+  remove(kind,id){
+    const coll={topic:"topics",prayer:"prayers",wish:"wishes"}[kind];
+    const lists={topic:topics,prayer:prayers,wish:wishes};const x=lists[kind].find(i=>i.id===id);if(!x||x.by!==me)return;
+    if(kind==="topic")topics=topics.filter(i=>i.id!==id);else if(kind==="prayer")prayers=prayers.filter(i=>i.id!==id);else wishes=wishes.filter(i=>i.id!==id);
+    remote((F,db)=>F.deleteDoc(F.doc(db,...P(coll,id))))}
 };
 
 /* ---------- Helfer ---------- */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const color=n=>(people.find(p=>p.n===n)||{}).c||"#8e8e93";
-const dot=(n,cls="")=>`<span class="dot ${cls}" style="background:${color(n)}" title="${esc(n)}">${esc(n[0])}</span>`;
-function meetingDate(){
-  const d=new Date();d.setHours(0,0,0,0);
-  d.setDate(d.getDate()+((MEETING_WEEKDAY-d.getDay()+7)%7));
-  return d;
-}
-const nextMeeting=()=>meetingDate().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
-const meetingKey=()=>{const d=meetingDate();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const dot=(n,cls="")=>`<span class="dot ${cls}" style="background:${color(n)}" title="${esc(n)}">${esc((n||"?")[0])}</span>`;
 const order=n=>{const i=people.findIndex(p=>p.n===n);return i<0?99:i};
 function needMe(){if(!me){pick();return false}return true}
 const delBtn=(id,kind)=>`<button class="del" data-del="${id}" data-kind="${kind}">Löschen</button>`;
+const armDel=x=>{if(x.classList.contains("arm"))return true;x.classList.add("arm");const t=x.textContent;x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent=t}},3000);return false};
+function openSheet(kind,html,cls=""){
+  if(document.querySelector(".sheet-bg"))return null;
+  const bg=document.createElement("div");bg.className="sheet-bg";bg.dataset.kind=kind;
+  bg.innerHTML=`<div class="sheet ${cls}" role="dialog">${html}</div>`;
+  bg.addEventListener("click",e=>{if(e.target===bg)bg.remove()});
+  document.body.appendChild(bg);return bg;
+}
 
 /* ---------- Ansichten ---------- */
 function renderMe(){
   $("me").innerHTML=me?dot(me)+esc(me):'<span class="dot" style="background:var(--muted)">?</span>Wer bist du?';
 }
 function renderTreffen(){
-  $("when").textContent=nextMeeting();
-  $("cook").innerHTML=meet.cook
-    ?`<div class="row">${dot(meet.cook)}<span class="name">${esc(meet.cook)}</span><span class="tag">kocht</span></div>`
+  const u=upcoming(),m=curMeeting(),c=cur();sel=m.key;
+  const short=d=>d.toLocaleDateString("de-DE",{weekday:"short",day:"numeric",month:"short"});
+  $("chips").innerHTML=u.map(x=>`<button class="chip ${x.key===m.key?"on":""}" data-meet="${x.key}" role="tab" aria-selected="${x.key===m.key}">${esc(x.label||short(x.date))}</button>`).join("")
+    +`<button class="chip add" id="bAddMeet">+ Weiteres Treffen</button>`;
+  $("whenLbl").textContent=m.weekly?"Wöchentliches Treffen":(m.label||"Weiteres Treffen");
+  $("when").textContent=m.date.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+  $("whenTime").textContent=(m.time||"")+" Uhr";
+  $("whenDel").innerHTML=!m.weekly&&m.by===me?`<button class="del" id="bDelMeet">Löschen</button>`:"";
+  $("cook").innerHTML=c.cook
+    ?`<div class="row">${dot(c.cook)}<span class="name">${esc(c.cook)}</span><span class="tag">kocht</span></div>`
     :`<div class="empty">Noch niemand</div>`;
-  const names=Object.keys(meet.status).sort((a,b)=>(b===meet.cook)-(a===meet.cook)||order(a)-order(b));
-  const yes=names.filter(n=>meet.status[n]==="yes"),no=names.filter(n=>meet.status[n]==="no");
+  const names=Object.keys(c.status).sort((a,b)=>(b===c.cook)-(a===c.cook)||order(a)-order(b));
+  const yes=names.filter(n=>c.status[n]==="yes"),no=names.filter(n=>c.status[n]==="no");
   $("countLabel").textContent=`Dabei · ${yes.length}`;
-  const rows=yes.map(n=>`<div class="row yes">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span>${n===meet.cook?'<span class="tag">kocht</span>':""}</div>`)
+  const rows=yes.map(n=>`<div class="row yes">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span>${n===c.cook?'<span class="tag">kocht</span>':""}</div>`)
     .concat(no.map(n=>`<div class="row no">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span></div>`));
   $("list").innerHTML=rows.join("")||`<div class="empty">Noch keine Zusagen</div>`;
-  $("bYes").classList.toggle("on",meet.status[me]==="yes");
-  $("bNo").classList.toggle("on",meet.status[me]==="no");
-  $("bCook").classList.toggle("on",meet.cook===me);
-  $("bCook").textContent=meet.cook===me?"Ich koche nicht mehr":"Ich koche";
+  $("bYes").classList.toggle("on",c.status[me]==="yes");
+  $("bNo").classList.toggle("on",c.status[me]==="no");
+  $("bCook").classList.toggle("on",c.cook===me);
+  $("bCook").textContent=c.cook===me?"Ich koche nicht mehr":"Ich koche";
 }
 function renderThemen(){
   const list=[...topics].sort((a,b)=>b.votes.length-a.votes.length||(a.t||0)-(b.t||0));
   $("topics").innerHTML=list.map(t=>{
     const mine=t.votes.includes(me);
     return `<div class="row">${dot(t.by)}
-      <span class="name">${esc(t.text)}
+      <span class="name link" data-topic="${t.id}">${esc(t.text)}${t.notes?'<span class="ntag">· Notiz</span>':""}
         <span class="voters">${t.votes.map(v=>dot(v,"sm")).join("")}</span></span>
-      ${t.by===me?delBtn(t.id,"topic"):""}
       <button class="pill ${mine?"on":""}" data-vote="${t.id}" aria-pressed="${mine}" aria-label="Interessiert mich auch"><span aria-hidden="true">🙋</span> ${t.votes.length}</button>
     </div>`}).join("")||`<div class="empty">Noch keine Themen</div>`;
 }
@@ -349,9 +424,24 @@ function render(){renderMe();renderTreffen();renderThemen();renderGebet()}
 
 /* ---------- Treffen: Knöpfe ---------- */
 function act(fn){if(!needMe())return;fn();saveLocal();render()}
-$("bYes").onclick=()=>act(()=>ops.setStatus(meet.status[me]==="yes"?null:"yes"));
-$("bNo").onclick=()=>act(()=>ops.setStatus(meet.status[me]==="no"?null:"no"));
-$("bCook").onclick=()=>act(()=>ops.setCook(meet.cook!==me));
+$("bYes").onclick=()=>act(()=>ops.setStatus(cur().status[me]==="yes"?null:"yes"));
+$("bNo").onclick=()=>act(()=>ops.setStatus(cur().status[me]==="no"?null:"no"));
+$("bCook").onclick=()=>act(()=>ops.setCook(cur().cook!==me));
+
+/* Weiteres Treffen anlegen */
+function addMeeting(){
+  if(!needMe())return;
+  const t=new Date();t.setDate(t.getDate()+1);
+  const bg=openSheet("meet",`<h2>Weiteres Treffen</h2><p>Zusätzlich zum wöchentlichen Treffen.</p>
+    <form class="add" id="fMeet"><div class="group">
+      <div class="field"><label for="mDate">Datum</label><input type="date" id="mDate" value="${ymd(t)}" min="${ymd(new Date())}"></div>
+      <div class="field"><label for="mTime">Uhrzeit</label><input type="time" id="mTime" value="${esc(config.time)}"></div>
+      <input id="mLabel" maxlength="30" placeholder="Name, z. B. Gebetsabend (optional)" autocomplete="off" style="border-top:1px solid var(--line)">
+    </div><button class="btn on">Treffen anlegen</button></form>`);
+  if(!bg)return;
+  $("fMeet").onsubmit=e=>{e.preventDefault();const d=$("mDate").value,tm=$("mTime").value;if(!d||!tm)return;
+    act(()=>ops.addExtra(d,tm,$("mLabel").value.trim()));bg.remove()};
+}
 
 /* ---------- Themen und Gebet: Formulare ---------- */
 $("tTopic").oninput=()=>$("bTopic").disabled=!$("tTopic").value.trim();
@@ -362,41 +452,102 @@ $("pName").oninput=pOk;$("pText").oninput=pOk;
 $("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$("pText").value.trim();if(!n)return;
   act(()=>{ops.addPrayer(n,t);$("pName").value="";$("pText").value="";pOk()})};
 
-/* Klicks in Listen: 🙋, Erhört, Löschen (zweimal tippen) */
+/* ---------- Notizseite zu einem Thema ---------- */
+let openTopic=null,noteTimer=null;
+function topicSheet(id){
+  openTopic=id;
+  const bg=openSheet("topic",`<div id="topicBody"></div>`,"tall");if(!bg)return;
+  fillTopic();
+}
+function fillTopic(){
+  const t=topics.find(t=>t.id===openTopic),box=$("topicBody");if(!box)return;
+  if(!t){document.querySelector(".sheet-bg")?.remove();return}
+  const mine=t.by===me;
+  if(mine&&box.dataset.id===t.id&&box.contains(document.activeElement))return; // nicht beim Tippen überschreiben
+  box.dataset.id=t.id;
+  box.innerHTML=`<div style="display:flex;align-items:center;gap:10px">${dot(t.by)}<span class="tag">${esc(t.by)}${mine?" (du)":""} · 🙋 ${t.votes.length}</span>
+      <span style="flex:1"></span><button class="del" id="tDone">Fertig</button></div>
+    ${mine?`<input class="title-in" id="tTitle" maxlength="120" value="${esc(t.text)}" aria-label="Titel">`:`<h2 style="font-size:24px">${esc(t.text)}</h2>`}
+    <div class="group">${mine?`<textarea class="note-in" id="tNotes" placeholder="Beschreibe deine Idee genauer: Bibelstellen, Fragen, Gedanken …">${esc(t.notes||"")}</textarea>`
+      :`<div style="padding:14px 16px;white-space:pre-wrap;min-height:80px">${t.notes?esc(t.notes):'<span style="color:var(--muted)">Noch keine Notiz.</span>'}</div>`}</div>
+    ${mine?`<p class="note" id="tSaved">Wird automatisch gespeichert.</p><button class="del" data-del="${t.id}" data-kind="topic" style="align-self:center">Thema löschen</button>`:""}`;
+  $("tDone").onclick=()=>document.querySelector(".sheet-bg")?.remove();
+  if(mine){
+    const save=()=>{clearTimeout(noteTimer);noteTimer=setTimeout(()=>{const v=$("tTitle").value.trim();ops.editTopic(t.id,{text:v||t.text,notes:$("tNotes").value});saveLocal();renderThemen();$("tSaved").textContent="Gespeichert"},500)};
+    $("tTitle").oninput=save;$("tNotes").oninput=save;
+  }
+}
+
+/* Klicks in Listen: Treffen, 🙋, Erhört, Thema öffnen, Löschen (zweimal tippen) */
 document.addEventListener("click",e=>{
+  const c=e.target.closest("[data-meet]");if(c){sel=c.dataset.meet;renderTreffen();return}
+  if(e.target.closest("#bAddMeet")){addMeeting();return}
+  const dm=e.target.closest("#bDelMeet");if(dm){if(armDel(dm))act(()=>ops.removeExtra(curMeeting().x.id));return}
+  const tp=e.target.closest("[data-topic]");if(tp){topicSheet(tp.dataset.topic);return}
   const v=e.target.closest("[data-vote]"),d=e.target.closest("[data-done]"),x=e.target.closest("[data-del]");
   if(v)act(()=>ops.vote(v.dataset.vote));
   if(d)act(()=>ops.toggleDone(d.dataset.done));
-  if(x){
-    if(!x.classList.contains("arm")){x.classList.add("arm");x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent="Löschen"}},3000);return}
-    act(()=>ops.remove(x.dataset.kind,x.dataset.del));
-  }
+  if(x&&armDel(x)){act(()=>ops.remove(x.dataset.kind,x.dataset.del));if(x.dataset.kind==="topic")document.querySelector(".sheet-bg")?.remove();if(x.dataset.kind==="wish")fillWishes()}
 });
+
+/* ---------- Einstellungen ---------- */
+$("gear").onclick=settings;
+function settings(){
+  const bg=openSheet("settings",`<div style="display:flex;align-items:center;justify-content:space-between"><h2>Einstellungen</h2><button class="del" id="sDone">Fertig</button></div>
+    <div><p class="label">Darstellung</p><div class="seg" id="sTheme">
+      <button data-th="system">Automatisch</button><button data-th="light">Hell</button><button data-th="dark">Dunkel</button></div></div>
+    <div><p class="label">Wöchentliches Treffen (für alle)</p><div class="group">
+      <div class="field"><label for="sDay">Wochentag</label><select id="sDay">${WEEKDAYS.map((w,i)=>`<option value="${i}">${w}</option>`).join("")}</select></div>
+      <div class="field"><label for="sTime">Uhrzeit</label><input type="time" id="sTime"></div></div></div>
+    <div><p class="label">Wünsche an die App</p>
+      <form class="add" id="fWish"><div class="group"><textarea id="wText" maxlength="500" placeholder="Was soll die App noch können? Z. B. eine Seite, auf der wir teilen, was wir in der Bibel gelesen haben."></textarea></div>
+      <button class="btn on" id="bWish" disabled>Wunsch senden</button></form>
+      <div class="group" id="wishList" style="margin-top:10px"></div></div>
+    ${DEMO?"":`<p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="sSwitch">Gruppe wechseln</button></p>`}`,"tall");
+  if(!bg)return;
+  fillSettings();fillWishes();
+  $("sDone").onclick=()=>bg.remove();
+  $("sTheme").onclick=e=>{const b=e.target.closest("[data-th]");if(!b)return;theme=b.dataset.th;store.set("theme",theme);applyTheme();fillSettings()};
+  const saveWeekly=()=>{const t=$("sTime").value;if(!t)return;ops.setWeekly(+$("sDay").value,t);saveLocal();render()};
+  $("sDay").onchange=saveWeekly;$("sTime").onchange=saveWeekly;
+  $("wText").oninput=()=>$("bWish").disabled=!$("wText").value.trim();
+  $("fWish").onsubmit=e=>{e.preventDefault();const v=$("wText").value.trim();if(!v||!needMe())return;ops.addWish(v);saveLocal();$("wText").value="";$("bWish").disabled=true;fillWishes()};
+  if($("sSwitch"))$("sSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
+}
+function fillSettings(){
+  if(!$("sTheme"))return;
+  $("sTheme").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.th===theme));
+  if(document.activeElement!==$("sDay"))$("sDay").value=config.weekday;
+  if(document.activeElement!==$("sTime"))$("sTime").value=config.time;
+}
+function fillWishes(){
+  const l=$("wishList");if(!l)return;
+  const list=[...wishes].sort((a,b)=>(b.t||0)-(a.t||0));
+  l.hidden=!list.length;
+  l.innerHTML=list.map(w=>`<div class="row">${dot(w.by)}<span class="name">${esc(w.text)}</span>${w.by===me?delBtn(w.id,"wish"):""}</div>`).join("");
+}
 
 /* ---------- Wer bist du? ---------- */
 $("me").onclick=pick;
 function pick(){
-  if(document.querySelector(".sheet-bg"))return;
-  const bg=document.createElement("div");bg.className="sheet-bg";bg.dataset.kind="pick";
-  bg.innerHTML=`<div class="sheet" role="dialog" aria-label="Wer bist du?"><h2>Wer bist du?</h2><p>Einmal antippen. Dein Handy merkt es sich.</p>
+  const bg=openSheet("pick",`<h2>Wer bist du?</h2><p>Einmal antippen. Dein Handy merkt es sich.</p>
   <div class="group" id="pickList"></div>
   <form class="add" id="fPerson"><div class="group"><input id="newName" maxlength="20" placeholder="Neuer Name" autocomplete="off"></div>
   <button class="btn on" id="bPerson" disabled>Name hinzufügen</button></form>
-  ${DEMO?"":`<p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="bSwitch">Gruppe wechseln</button></p>`}</div>`;
-  document.body.appendChild(bg);fillPick();
+  ${DEMO?"":`<p class="note">Gruppe <b>${esc(code||"")}</b> · <button type="button" class="del" id="bSwitch">Gruppe wechseln</button></p>`}`);
+  if(!bg)return;
+  fillPick();
   $("newName").oninput=()=>$("bPerson").disabled=!$("newName").value.trim();
   $("fPerson").onsubmit=e=>{e.preventDefault();const n=$("newName").value.trim().replace(/\s+/g," ");if(!n)return;
     if(!ops.addPerson(n)){$("newName").value="";$("newName").placeholder="Den Namen gibt es schon";return}
     saveLocal();me=n;store.set("me",me);render();bg.remove()};
   if($("bSwitch"))$("bSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
-  bg.onclick=e=>{
+  bg.addEventListener("click",e=>{
     const x=e.target.closest("[data-delp]");
-    if(x){if(!x.classList.contains("arm")){x.classList.add("arm");x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent="Löschen"}},3000);return}
-      ops.removePerson(x.dataset.delp);saveLocal();render();fillPick();return}
+    if(x){if(armDel(x)){ops.removePerson(x.dataset.delp);saveLocal();render();fillPick()}return}
     const b=e.target.closest("[data-n]");
-    if(b){me=b.dataset.n;store.set("me",me);render();bg.remove();return}
-    if(e.target===bg&&me)bg.remove();
-  };
+    if(b){me=b.dataset.n;store.set("me",me);render();bg.remove()}
+  });
 }
 function fillPick(){
   const l=$("pickList");if(!l)return;
@@ -404,16 +555,27 @@ function fillPick(){
     ||`<div class="empty">Noch keine Namen. Schreib unten deinen Namen.</div>`;
 }
 
-/* ---------- Seiten wechseln ---------- */
-const TITLES={treffen:"Bibelabend",themen:"Themen",gebet:"Gebet"};
+/* ---------- Seiten wechseln (Tippen oder Wischen) ---------- */
+const TITLES={treffen:"Bibelstudium",themen:"Themen",gebet:"Gebet"},ORDER=Object.keys(TITLES);
+const curView=()=>{const v=(location.hash||"#treffen").slice(1);return TITLES[v]?v:"treffen"};
 function route(){
-  const v=(location.hash||"#treffen").slice(1),view=TITLES[v]?v:"treffen";
+  const view=curView();
   for(const k in TITLES)$("v-"+k).hidden=k!==view;
   document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.v===view));
   $("title").textContent=TITLES[view];
   window.scrollTo(0,0);
 }
 addEventListener("hashchange",route);
+let sx=null,sy=0;
+document.addEventListener("touchstart",e=>{
+  if(document.querySelector(".sheet-bg")||e.target.closest("input,textarea,select,.chips")){sx=null;return}
+  sx=e.touches[0].clientX;sy=e.touches[0].clientY},{passive:true});
+document.addEventListener("touchend",e=>{
+  if(sx===null)return;const dx=e.changedTouches[0].clientX-sx,dy=e.changedTouches[0].clientY-sy;sx=null;
+  if(Math.abs(dx)<70||Math.abs(dy)>Math.abs(dx)*.6)return;
+  const i=ORDER.indexOf(curView())+(dx<0?1:-1);if(i>=0&&i<ORDER.length)location.hash=ORDER[i];
+},{passive:true});
+
 route();render();
 if(!me&&(DEMO||code))pick();
 initFirebase();
