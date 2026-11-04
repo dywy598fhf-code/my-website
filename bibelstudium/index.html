@@ -322,11 +322,14 @@ function askCode(msg){
     <button class="btn on" id="codeBtn">Weiter</button></form>`;
   document.body.appendChild(bg);
   const norm=()=>$("codeIn").value.trim().toLowerCase().replace(/\s+/g,"-").replace(/[\/.#$\[\]]/g,"");
-  const done=c=>{code=c;store.set("code",c);bg.remove();initFirebase()};
+  // Code merken und die App frisch laden: so startet sie genau wie beim nächsten Öffnen
+  const done=c=>{store.set("code",c);store.set("me",null);location.replace(location.pathname+location.hash)};
   $("codeForm").onsubmit=async e=>{e.preventDefault();const c=norm();if(c.length<4){$("codeMsg").textContent="Der Code ist zu kurz.";return}
     $("codeBtn").disabled=true;$("codeMsg").textContent="Prüfe …";
-    try{await connect();const snap=await R.F.getDoc(R.F.doc(R.db,"groups",c,"meta","info"));
-      if(snap.exists())done(c);else $("codeMsg").textContent="Diesen Code gibt es nicht. Prüfe die Schreibweise."
+    try{const wait=new Promise((_,no)=>setTimeout(()=>no(new Error("timeout")),12000)); // nie ewig „Prüfe …“
+      const snap=await Promise.race([connect().then(()=>R.F.getDoc(R.F.doc(R.db,"groups",c,"meta","info"))),wait]);
+      if(snap.exists()){done(c);return}
+      $("codeMsg").textContent="Diesen Code gibt es nicht. Prüfe die Schreibweise."
     }catch(err){console.warn(err);$("codeMsg").textContent="Keine Verbindung. Bitte später nochmal versuchen."}
     $("codeBtn").disabled=false};
 }
