@@ -158,7 +158,7 @@ h1{font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.02em;margin:0
     <p class="note">Bitte nur Vornamen.</p>
   </div>
 
-  <p class="note">Testversion · nur auf deinem Handy gespeichert</p>
+  <p class="note" id="demoNote">Testversion · nur auf deinem Handy gespeichert</p>
 </div>
 
 <nav class="tabs">
@@ -176,35 +176,87 @@ const PEOPLE=[
 ];
 const MEETING_WEEKDAY=4; // 0 = Sonntag … 4 = Donnerstag
 
-/* ---------- Speicher: vorerst nur auf diesem Handy. Später gemeinsam online. ---------- */
+/* ---------- Firebase: hier den firebaseConfig-Block einsetzen. Leer = nur auf diesem Handy. ---------- */
+const FIREBASE_CONFIG=null;
+const FB="https://www.gstatic.com/firebasejs/11.0.2/";
+
+/* ---------- Speicher auf dem Handy ---------- */
 const store={
   get(k,d){try{const v=localStorage.getItem("ba-"+k);return v?JSON.parse(v):d}catch(e){return d}},
   set(k,v){try{localStorage.setItem("ba-"+k,JSON.stringify(v))}catch(e){}}
 };
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 let me=store.get("me",null);
-let meet=store.get("meet",{cook:"Anna",yes:["Anna","Jonas","Lea","Tim"],no:["Micha"]});
-let topics=store.get("topics",[
-  {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"]},
-  {id:"t2",text:"Das Buch Jona",by:"Jonas",votes:["Anna"]}
-]);
-let prayers=store.get("prayers",[
-  {id:"p1",name:"Markus",text:"Neue Arbeitsstelle",by:"Tim",done:false},
-  {id:"p3",name:"Sophie",text:"Prüfungen im Studium",by:"Tim",done:false},
-  {id:"p2",name:"Julia",text:"Gesundheit nach der OP",by:"Anna",done:true}
-]);
-const saveAll=()=>{store.set("meet",meet);store.set("topics",topics);store.set("prayers",prayers)};
+// Beispieldaten nur für die Testversion ohne Firebase
+const DEMO=!FIREBASE_CONFIG;
+let meet=DEMO?store.get("meet2",{cook:"Anna",status:{Anna:"yes",Jonas:"yes",Lea:"yes",Tim:"yes",Micha:"no"}}):{cook:null,status:{}};
+let topics=DEMO?store.get("topics",[
+  {id:"t1",text:"Wie bete ich, wenn mir die Worte fehlen?",by:"Lea",votes:["Kevin","Sarah","Tim"],t:2},
+  {id:"t2",text:"Das Buch Jona",by:"Jonas",votes:["Anna"],t:1}
+]):[];
+let prayers=DEMO?store.get("prayers",[
+  {id:"p1",name:"Markus",text:"Neue Arbeitsstelle",by:"Tim",done:false,t:3},
+  {id:"p3",name:"Sophie",text:"Prüfungen im Studium",by:"Tim",done:false,t:2},
+  {id:"p2",name:"Julia",text:"Gesundheit nach der OP",by:"Anna",done:true,t:1}
+]):[];
+const saveLocal=()=>{if(DEMO){store.set("meet2",meet);store.set("topics",topics);store.set("prayers",prayers)}};
+
+/* ---------- Gemeinsamer Speicher (Firebase) ---------- */
+const R={on:false};
+async function initFirebase(){
+  if(!FIREBASE_CONFIG)return;
+  try{
+    const [A,Au,F]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-auth.js"),import(FB+"firebase-firestore.js")]);
+    const app=A.initializeApp(FIREBASE_CONFIG);
+    await Au.signInAnonymously(Au.getAuth(app));
+    const db=F.getFirestore(app);
+    Object.assign(R,{on:true,F,db,meetRef:F.doc(db,"meetings",meetingKey())});
+    F.onSnapshot(R.meetRef,d=>{const v=d.data()||{};meet={cook:v.cook||null,status:v.status||{}};render()});
+    F.onSnapshot(F.collection(db,"topics"),q=>{topics=q.docs.map(d=>({id:d.id,votes:[],...d.data()}));render()});
+    F.onSnapshot(F.collection(db,"prayers"),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
+    $("demoNote").hidden=true;
+  }catch(e){console.warn("Firebase nicht erreichbar",e);$("demoNote").textContent="Keine Verbindung · Einträge werden gerade nicht geteilt"}
+}
+const remote=fn=>{if(R.on)fn(R.F,R.db).catch(e=>console.warn(e))};
+
+/* Alle Änderungen laufen über diese Funktionen */
+const ops={
+  setStatus(st){ // "yes" | "no" | null
+    if(st)meet.status[me]=st;else delete meet.status[me];
+    const cookOff=meet.cook===me&&st!=="yes"; if(cookOff)meet.cook=null;
+    remote(F=>F.setDoc(R.meetRef,{status:{[me]:st||F.deleteField()},...(cookOff?{cook:null}:{})},{merge:true}));
+  },
+  setCook(on){
+    meet.cook=on?me:null; if(on)meet.status[me]="yes";
+    remote(F=>F.setDoc(R.meetRef,{cook:meet.cook,...(on?{status:{[me]:"yes"}}:{})},{merge:true}));
+  },
+  addTopic(text){const t={id:uid(),text,by:me,votes:[],t:Date.now()};topics.push(t);
+    remote((F,db)=>F.setDoc(F.doc(db,"topics",t.id),{text,by:me,votes:[],t:t.t}))},
+  vote(id){const t=topics.find(t=>t.id===id);if(!t)return;const on=!t.votes.includes(me);
+    t.votes=on?[...t.votes,me]:t.votes.filter(n=>n!==me);
+    remote((F,db)=>F.updateDoc(F.doc(db,"topics",id),{votes:on?F.arrayUnion(me):F.arrayRemove(me)}))},
+  addPrayer(name,text){const p={id:uid(),name,text,by:me,done:false,t:Date.now()};prayers.push(p);
+    remote((F,db)=>F.setDoc(F.doc(db,"prayers",p.id),{name,text,by:me,done:false,t:p.t}))},
+  toggleDone(id){const p=prayers.find(p=>p.id===id);if(!p||p.by!==me)return;p.done=!p.done;
+    remote((F,db)=>F.updateDoc(F.doc(db,"prayers",id),{done:p.done}))},
+  remove(kind,id){const list=kind==="topic"?topics:prayers,x=list.find(i=>i.id===id);if(!x||x.by!==me)return;
+    if(kind==="topic")topics=topics.filter(i=>i.id!==id);else prayers=prayers.filter(i=>i.id!==id);
+    remote((F,db)=>F.deleteDoc(F.doc(db,kind==="topic"?"topics":"prayers",id)))}
+};
 
 /* ---------- Helfer ---------- */
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const color=n=>(PEOPLE.find(p=>p.n===n)||{}).c||"#888";
 const dot=(n,cls="")=>`<span class="dot ${cls}" style="background:${color(n)}" title="${esc(n)}">${esc(n[0])}</span>`;
-function nextMeeting(){
+function meetingDate(){
   const d=new Date();d.setHours(0,0,0,0);
   d.setDate(d.getDate()+((MEETING_WEEKDAY-d.getDay()+7)%7));
-  return d.toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+  return d;
 }
+const nextMeeting=()=>meetingDate().toLocaleDateString("de-DE",{weekday:"long",day:"numeric",month:"long"});
+const meetingKey=()=>{const d=meetingDate();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const order=n=>{const i=PEOPLE.findIndex(p=>p.n===n);return i<0?99:i};
 function needMe(){if(!me){pick();return false}return true}
 const delBtn=(id,kind)=>`<button class="del" data-del="${id}" data-kind="${kind}">Löschen</button>`;
 
@@ -217,17 +269,19 @@ function renderTreffen(){
   $("cook").innerHTML=meet.cook
     ?`<div class="row">${dot(meet.cook)}<span class="name">${esc(meet.cook)}</span><span class="tag">kocht</span></div>`
     :`<div class="empty">Noch niemand</div>`;
-  $("countLabel").textContent=`Dabei · ${meet.yes.length}`;
-  const rows=meet.yes.map(n=>`<div class="row yes">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span>${n===meet.cook?'<span class="tag">kocht</span>':""}</div>`)
-    .concat(meet.no.map(n=>`<div class="row no">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span></div>`));
+  const names=Object.keys(meet.status).sort((a,b)=>(b===meet.cook)-(a===meet.cook)||order(a)-order(b));
+  const yes=names.filter(n=>meet.status[n]==="yes"),no=names.filter(n=>meet.status[n]==="no");
+  $("countLabel").textContent=`Dabei · ${yes.length}`;
+  const rows=yes.map(n=>`<div class="row yes">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span>${n===meet.cook?'<span class="tag">kocht</span>':""}</div>`)
+    .concat(no.map(n=>`<div class="row no">${dot(n)}<span class="name">${esc(n)}${n===me?" (du)":""}</span></div>`));
   $("list").innerHTML=rows.join("")||`<div class="empty">Noch keine Zusagen</div>`;
-  $("bYes").classList.toggle("on",meet.yes.includes(me));
-  $("bNo").classList.toggle("on",meet.no.includes(me));
+  $("bYes").classList.toggle("on",meet.status[me]==="yes");
+  $("bNo").classList.toggle("on",meet.status[me]==="no");
   $("bCook").classList.toggle("on",meet.cook===me);
   $("bCook").textContent=meet.cook===me?"Ich koche nicht mehr":"Ich koche";
 }
 function renderThemen(){
-  const list=[...topics].sort((a,b)=>b.votes.length-a.votes.length);
+  const list=[...topics].sort((a,b)=>b.votes.length-a.votes.length||(a.t||0)-(b.t||0));
   $("topics").innerHTML=list.map(t=>{
     const mine=t.votes.includes(me);
     return `<div class="row">${dot(t.by)}
@@ -241,7 +295,7 @@ function renderGebet(){
   const by=[...new Set(prayers.map(p=>p.by))].sort((a,b)=>(b===me)-(a===me));
   $("prayers").innerHTML=by.map(a=>`<div class="group">
     <div class="row head">${dot(a)}<span class="name">${esc(a)}${a===me?" (du)":""}</span></div>
-    ${prayers.filter(p=>p.by===a).map(p=>`<div class="row sub-row ${p.done?"done":""}">
+    ${prayers.filter(p=>p.by===a).sort((x,y)=>(y.t||0)-(x.t||0)).map(p=>`<div class="row sub-row ${p.done?"done":""}">
       <span class="name">${esc(p.name)}<span class="sub">${esc(p.text)}</span></span>
       ${a===me?delBtn(p.id,"prayer")+`<button class="pill done ${p.done?"on":""}" data-done="${p.id}" aria-pressed="${p.done}" aria-label="Erhört">✓</button>`:(p.done?'<span class="tag">✓ erhört</span>':"")}
     </div>`).join("")}
@@ -250,29 +304,28 @@ function renderGebet(){
 function render(){renderMe();renderTreffen();renderThemen();renderGebet()}
 
 /* ---------- Treffen: Knöpfe ---------- */
-const drop=n=>{meet.yes=meet.yes.filter(x=>x!==n);meet.no=meet.no.filter(x=>x!==n)};
-function act(fn){if(!needMe())return;fn();saveAll();render()}
-$("bYes").onclick=()=>act(()=>{const was=meet.yes.includes(me);drop(me);if(meet.cook===me&&was)meet.cook=null;if(!was)meet.yes.push(me)});
-$("bNo").onclick=()=>act(()=>{const was=meet.no.includes(me);drop(me);if(meet.cook===me)meet.cook=null;if(!was)meet.no.push(me)});
-$("bCook").onclick=()=>act(()=>{if(meet.cook===me){meet.cook=null}else{meet.cook=me;drop(me);meet.yes.unshift(me)}});
+function act(fn){if(!needMe())return;fn();saveLocal();render()}
+$("bYes").onclick=()=>act(()=>ops.setStatus(meet.status[me]==="yes"?null:"yes"));
+$("bNo").onclick=()=>act(()=>ops.setStatus(meet.status[me]==="no"?null:"no"));
+$("bCook").onclick=()=>act(()=>ops.setCook(meet.cook!==me));
 
 /* ---------- Themen und Gebet: Formulare ---------- */
 $("tTopic").oninput=()=>$("bTopic").disabled=!$("tTopic").value.trim();
 $("fTopic").onsubmit=e=>{e.preventDefault();const v=$("tTopic").value.trim();if(!v)return;
-  act(()=>{topics.push({id:uid(),text:v,by:me,votes:[]});$("tTopic").value="";$("bTopic").disabled=true})};
+  act(()=>{ops.addTopic(v);$("tTopic").value="";$("bTopic").disabled=true})};
 const pOk=()=>$("bPrayer").disabled=!($("pName").value.trim()&&$("pText").value.trim());
 $("pName").oninput=pOk;$("pText").oninput=pOk;
 $("fPrayer").onsubmit=e=>{e.preventDefault();const n=$("pName").value.trim(),t=$("pText").value.trim();if(!n||!t)return;
-  act(()=>{prayers.unshift({id:uid(),name:n,text:t,by:me,done:false});$("pName").value="";$("pText").value="";pOk()})};
+  act(()=>{ops.addPrayer(n,t);$("pName").value="";$("pText").value="";pOk()})};
 
-/* Klicks in Listen: Ich auch, Erhört, Löschen (zweimal tippen) */
+/* Klicks in Listen: 🙋, Erhört, Löschen (zweimal tippen) */
 document.addEventListener("click",e=>{
   const v=e.target.closest("[data-vote]"),d=e.target.closest("[data-done]"),x=e.target.closest("[data-del]");
-  if(v)act(()=>{const t=topics.find(t=>t.id===v.dataset.vote);t.votes=t.votes.includes(me)?t.votes.filter(n=>n!==me):[...t.votes,me]});
-  if(d)act(()=>{const p=prayers.find(p=>p.id===d.dataset.done);if(p.by===me)p.done=!p.done});
+  if(v)act(()=>ops.vote(v.dataset.vote));
+  if(d)act(()=>ops.toggleDone(d.dataset.done));
   if(x){
     if(!x.classList.contains("arm")){x.classList.add("arm");x.textContent="Wirklich?";setTimeout(()=>{if(x.isConnected){x.classList.remove("arm");x.textContent="Löschen"}},3000);return}
-    act(()=>{const id=x.dataset.del;if(x.dataset.kind==="topic")topics=topics.filter(t=>!(t.id===id&&t.by===me));else prayers=prayers.filter(p=>!(p.id===id&&p.by===me))});
+    act(()=>ops.remove(x.dataset.kind,x.dataset.del));
   }
 });
 
@@ -299,6 +352,7 @@ function route(){
 addEventListener("hashchange",route);
 route();render();
 if(!me)pick();
+initFirebase();
 
 /* ---------- Als App installierbar (offline-fähig) ---------- */
 if("serviceWorker" in navigator&&location.protocol==="https:"){
