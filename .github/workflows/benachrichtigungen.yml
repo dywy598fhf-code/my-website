@@ -1,0 +1,22 @@
+# Schickt alle 15 Minuten die Benachrichtigungen der Bibelstudium-App.
+name: Benachrichtigungen
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency: benachrichtigungen
+jobs:
+  senden:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --prefix .github/notify --no-audit --no-fund
+      - run: node .github/notify/notify.js
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}

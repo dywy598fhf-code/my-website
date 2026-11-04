@@ -120,6 +120,12 @@ textarea.note-in::placeholder,.add textarea::placeholder{color:var(--muted)}
 .row .name.link{cursor:pointer}
 .ntag{font-size:12px;color:var(--muted);margin-left:6px}
 .sheet .label{margin-top:4px}
+.field input.switch{appearance:none;-webkit-appearance:none;width:51px;height:31px;border-radius:16px;background:var(--line);position:relative;transition:background .2s;flex:none;padding:0;margin:0;cursor:pointer}
+.field input.switch::after{content:"";position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .25s var(--ease)}
+.field input.switch:checked{background:var(--ok)}
+.field input.switch:checked::after{transform:translateX(20px)}
+.field input.switch:disabled{opacity:.5}
+#nMsg{text-align:left;margin-top:8px}
 @keyframes up{from{transform:translateY(100%)}}
 @keyframes fade{from{opacity:0}}
 .view{display:flex;flex-direction:column;gap:28px;animation:pop .3s var(--ease)}
@@ -204,6 +210,8 @@ const DEMO_PEOPLE=[
   {n:"Tim",c:"#1597a6"},{n:"Ruth",c:"#8a6a4f"},{n:"David",c:"#5a6b7d"},{n:"Esther",c:"#a3456b"}
 ];
 const DEFAULT_CONFIG={weekday:4,time:"19:30",extras:[]}; // 0 = Sonntag … 4 = Donnerstag
+/* Benachrichtigungen: öffentlicher Schlüssel aus Firebase → Projekteinstellungen → Cloud Messaging → Web-Push-Zertifikate */
+const VAPID_KEY=null;
 const WEEKDAYS=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 
 /* ---------- Firebase: hier den firebaseConfig-Block einsetzen. Leer = nur auf diesem Handy. ---------- */
@@ -256,7 +264,7 @@ async function connect(){
   const [A,Au,F]=await Promise.all([import(FB+"firebase-app.js"),import(FB+"firebase-auth.js"),import(FB+"firebase-firestore.js")]);
   const app=A.initializeApp(FIREBASE_CONFIG);
   await Au.signInAnonymously(Au.getAuth(app));
-  Object.assign(R,{F,db:F.getFirestore(app)});
+  Object.assign(R,{F,app,db:F.getFirestore(app)});
 }
 function refreshSheet(kind,fn){const s=document.querySelector(".sheet-bg");if(s&&s.dataset.kind===kind)fn()}
 async function initFirebase(){
@@ -273,6 +281,7 @@ async function initFirebase(){
     F.onSnapshot(F.collection(db,...P("prayers")),q=>{prayers=q.docs.map(d=>({id:d.id,...d.data()}));render()});
     F.onSnapshot(F.collection(db,...P("wishes")),q=>{wishes=q.docs.map(d=>({id:d.id,...d.data()}));refreshSheet("settings",fillWishes)});
     $("demoNote").hidden=true;
+    if(notifOn()&&"Notification" in window&&Notification.permission==="granted")saveDevice().catch(e=>console.warn(e));
     if(!me)pick();
   }catch(e){console.warn("Firebase nicht erreichbar",e);$("demoNote").textContent="Keine Verbindung · Einträge werden gerade nicht geteilt"}
 }
@@ -499,6 +508,10 @@ function settings(){
     <div><p class="label">Wöchentliches Treffen (für alle)</p><div class="group">
       <div class="field"><label for="sDay">Wochentag</label><select id="sDay">${WEEKDAYS.map((w,i)=>`<option value="${i}">${w}</option>`).join("")}</select></div>
       <div class="field"><label for="sTime">Uhrzeit</label><input type="time" id="sTime"></div></div></div>
+    <div><p class="label">Benachrichtigungen</p><div class="group">
+      <div class="field"><label for="nRemind">Erinnerung</label><select id="nRemind"><option value="off">Aus</option><option value="monday">Am Montag</option><option value="daybefore">Am Tag vorher</option></select></div>
+      <div class="field"><label for="nPrayer">Neue Gebetsanliegen</label><input type="checkbox" class="switch" id="nPrayer"></div></div>
+      <p class="note" id="nMsg"></p></div>
     <div><p class="label">Wünsche an die App</p>
       <form class="add" id="fWish"><div class="group"><textarea id="wText" maxlength="500" placeholder="Was soll die App noch können? Z. B. eine Seite, auf der wir teilen, was wir in der Bibel gelesen haben."></textarea></div>
       <button class="btn on" id="bWish" disabled>Wunsch senden</button></form>
@@ -512,13 +525,53 @@ function settings(){
   $("sDay").onchange=saveWeekly;$("sTime").onchange=saveWeekly;
   $("wText").oninput=()=>$("bWish").disabled=!$("wText").value.trim();
   $("fWish").onsubmit=e=>{e.preventDefault();const v=$("wText").value.trim();if(!v||!needMe())return;ops.addWish(v);saveLocal();$("wText").value="";$("bWish").disabled=true;fillWishes()};
+  $("nRemind").onchange=()=>setNotif({remind:$("nRemind").value});
+  $("nPrayer").onchange=()=>setNotif({prayers:$("nPrayer").checked});
   if($("sSwitch"))$("sSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
 }
+/* ---------- Benachrichtigungen ---------- */
+let notif=store.get("notif",{remind:"off",prayers:false});
+const notifOn=()=>notif.remind!=="off"||notif.prayers;
+const devId=store.get("dev",null)||(()=>{const d=uid();store.set("dev",d);return d})();
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+async function saveDevice(){ // Handy bei Firebase anmelden, damit es Nachrichten bekommt
+  const M=await import(FB+"firebase-messaging.js");
+  if(!(await M.isSupported()))throw new Error("unsupported");
+  const reg=await navigator.serviceWorker.ready;
+  const token=await M.getToken(M.getMessaging(R.app),{vapidKey:VAPID_KEY,serviceWorkerRegistration:reg});
+  await R.F.setDoc(R.F.doc(R.db,...P("devices",devId)),{token,name:me,remind:notif.remind,prayers:notif.prayers,t:Date.now()});
+}
+function syncName(){if(notifOn())remote((F,db)=>F.setDoc(F.doc(db,...P("devices",devId)),{name:me},{merge:true}))}
+function notifMsg(t){const m=$("nMsg");if(m)m.textContent=t}
+async function setNotif(change){
+  const next={...notif,...change},on=next.remind!=="off"||next.prayers;
+  const undo=t=>{notifMsg(t);fillSettings()};
+  if(DEMO)return undo("In der Testversion nicht möglich.");
+  if(!VAPID_KEY)return undo("Kommt bald: der Schlüssel aus Firebase fehlt noch.");
+  if(!R.on)return undo("Keine Verbindung. Bitte später nochmal versuchen.");
+  if(on&&!me){undo("");pick();return}
+  if(on){
+    if(isIOS&&!navigator.standalone)return undo("Auf dem iPhone geht das nur, wenn die App auf dem Home-Bildschirm liegt.");
+    if(!("Notification" in window)||!("serviceWorker" in navigator))return undo("Dieses Handy kann keine Benachrichtigungen empfangen.");
+    const perm=await Notification.requestPermission(); // muss direkt nach dem Tippen kommen
+    if(perm!=="granted")return undo("Benachrichtigungen sind blockiert. Erlaube sie in den Handy-Einstellungen.");
+    notifMsg("Wird eingeschaltet …");
+    notif=next;
+    try{await saveDevice();store.set("notif",notif);notifMsg("Eingeschaltet.")}
+    catch(e){console.warn(e);notif=store.get("notif",{remind:"off",prayers:false});undo("Hat nicht geklappt. Bitte nochmal versuchen.")}
+  }else{
+    notif=next;store.set("notif",notif);
+    remote((F,db)=>F.deleteDoc(F.doc(db,...P("devices",devId))));
+    notifMsg("Ausgeschaltet.");
+  }
+}
+
 function fillSettings(){
   if(!$("sTheme"))return;
   $("sTheme").querySelectorAll("button").forEach(b=>b.classList.toggle("on",b.dataset.th===theme));
   if(document.activeElement!==$("sDay"))$("sDay").value=config.weekday;
   if(document.activeElement!==$("sTime"))$("sTime").value=config.time;
+  $("nRemind").value=notif.remind;$("nPrayer").checked=notif.prayers;
 }
 function fillWishes(){
   const l=$("wishList");if(!l)return;
@@ -540,13 +593,13 @@ function pick(){
   $("newName").oninput=()=>$("bPerson").disabled=!$("newName").value.trim();
   $("fPerson").onsubmit=e=>{e.preventDefault();const n=$("newName").value.trim().replace(/\s+/g," ");if(!n)return;
     if(!ops.addPerson(n)){$("newName").value="";$("newName").placeholder="Den Namen gibt es schon";return}
-    saveLocal();me=n;store.set("me",me);render();bg.remove()};
+    saveLocal();me=n;store.set("me",me);syncName();render();bg.remove()};
   if($("bSwitch"))$("bSwitch").onclick=()=>{store.set("code",null);store.set("me",null);location.reload()};
   bg.addEventListener("click",e=>{
     const x=e.target.closest("[data-delp]");
     if(x){if(armDel(x)){ops.removePerson(x.dataset.delp);saveLocal();render();fillPick()}return}
     const b=e.target.closest("[data-n]");
-    if(b){me=b.dataset.n;store.set("me",me);render();bg.remove()}
+    if(b){me=b.dataset.n;store.set("me",me);syncName();render();bg.remove()}
   });
 }
 function fillPick(){
